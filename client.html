@@ -86,7 +86,7 @@ h1,.label{ font-family:'Chakra Petch',sans-serif; }
 .card h2{ font-size:18px; margin:0 0 4px; font-family:'Chakra Petch',sans-serif; }
 .card-company{ color:var(--ink-soft); font-size:13px; margin-bottom:10px; }
 .card-body{
-  flex:1; overflow-y:auto; white-space:pre-line; font-size:14px; color:var(--ink);
+  flex:1; overflow-y:auto; white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink);
   border-top:1px solid var(--line); padding-top:10px;
 }
 .card-contact{
@@ -94,7 +94,7 @@ h1,.label{ font-family:'Chakra Petch',sans-serif; }
   background:var(--ok-soft); border-radius:var(--radius-sm); padding:10px; display:none;
 }
 .card-contact.show{ display:block; }
-.card-contact div{ font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ok); }
+.card-contact div{ font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--ok); }
 
 .swipe-tag{
   position:absolute; top:16px; font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:18px;
@@ -442,11 +442,11 @@ function renderCard(){
 }
 
 function bindCardGestures(card){
-  let startX = 0, startY = 0, dx = 0, dragging = false;
+  let startX = 0, startY = 0, dx = 0, dragging = false, startTime = 0;
 
   card.addEventListener('pointerdown', function(e){
     if (liked) return; // после лайка не даём утащить карточку, ждём "Дальше"
-    dragging = true; startX = e.clientX; startY = e.clientY;
+    dragging = true; startX = e.clientX; startY = e.clientY; startTime = Date.now();
     card.setPointerCapture(e.pointerId);
   });
   card.addEventListener('pointermove', function(e){
@@ -460,7 +460,14 @@ function bindCardGestures(card){
   card.addEventListener('pointerup', function(){
     if (!dragging) return;
     dragging = false;
-    if (Math.abs(dx) > 90) {
+    const elapsed = Math.max(1, Date.now() - startTime);
+    const velocity = Math.abs(dx) / elapsed; // px/мс
+    // засчитываем и медленный осознанный драг (по расстоянию), и короткий
+    // быстрый флик пальцем (по скорости) — иначе обычный флик "как в
+    // Тиндере" не дотягивает до порога по одной лишь дистанции и его
+    // приходится повторять несколько раз
+    const isSwipe = Math.abs(dx) > 90 || (Math.abs(dx) > 24 && velocity > 0.35);
+    if (isSwipe) {
       finishSwipe(dx > 0 ? 'like' : 'skip', card, dx);
     } else {
       card.style.transition = 'transform .2s';
