@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Будни_BY</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var scheme = (tg && tg.colorScheme) ? tg.colorScheme
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', scheme);
+})();
+</script>
+
+<style>
+:root{
+  --radius:14px; --radius-sm:10px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1A1E22; --surface-2:#20252A; --surface-3:#262B31;
+  --ink:#EDEFF0; --ink-soft:#8C949C; --ink-faint:#565D64;
+  --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.14);
+  --ok:#38A89D; --ok-soft:rgba(56,168,157,.14);
+  --danger:#E5626A; --danger-soft:rgba(229,98,106,.12);
+  --line:#2A2F35; --line-strong:#3A414A;
+}
+:root[data-theme="light"]{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EEF1F4; --surface-3:#E4E8EC;
+  --ink:#171A1D; --ink-soft:#5B6570; --ink-faint:#98A1AA;
+  --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.12);
+  --ok:#2E9B8F; --ok-soft:rgba(46,155,143,.12);
+  --danger:#D6505A; --danger-soft:rgba(214,80,90,.10);
+  --line:#E2E6EA; --line-strong:#CDD3D9;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Inter',sans-serif; font-size:15px; line-height:1.4;
+  padding-top:max(12px, var(--safe-top));
+  padding-bottom:max(100px, calc(40px + var(--safe-bottom)));
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;
+}
+h1,.label{ font-family:'Chakra Petch',sans-serif; }
+.mono{ font-family:'JetBrains Mono',monospace; }
+.hidden{ display:none !important; }
+
+.topbar{ padding:8px 16px 12px; }
+.topbar h1{ font-size:18px; font-weight:700; margin:0 0 12px; }
+
+.tabs{ display:flex; gap:6px; }
+.tab{
+  flex:1; min-height:44px; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid var(--line);
+  color:var(--ink-soft); font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:13px;
+  display:flex; align-items:center; justify-content:center;
+}
+.tab.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+
+.content{ padding:0 16px; }
+
+/* ---------- свайп-карточка ---------- */
+.deck-wrap{ position:relative; min-height:420px; }
+.card{
+  position:absolute; inset:0;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; display:flex; flex-direction:column;
+  touch-action:none; user-select:none; cursor:grab;
+  will-change:transform;
+}
+.card-badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.badge{
+  font-size:11px; padding:3px 9px; border-radius:20px; background:var(--surface-2); color:var(--ink-soft);
+}
+.badge-employer{ background:var(--ok-soft); color:var(--ok); }
+.card h2{ font-size:18px; margin:0 0 4px; font-family:'Chakra Petch',sans-serif; }
+.card-company{ color:var(--ink-soft); font-size:13px; margin-bottom:10px; }
+.card-body{
+  flex:1; overflow-y:auto; white-space:pre-line; font-size:14px; color:var(--ink);
+  border-top:1px solid var(--line); padding-top:10px;
+}
+.card-contact{
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
+  background:var(--ok-soft); border-radius:var(--radius-sm); padding:10px; display:none;
+}
+.card-contact.show{ display:block; }
+.card-contact div{ font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ok); }
+
+.swipe-tag{
+  position:absolute; top:16px; font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:18px;
+  padding:4px 12px; border-radius:8px; border:2px solid; opacity:0; transform:rotate(-12deg);
+}
+.swipe-tag.like{ right:16px; color:var(--ok); border-color:var(--ok); }
+.swipe-tag.skip{ left:16px; color:var(--danger); border-color:var(--danger); transform:rotate(12deg); }
+
+.deck-actions{ display:flex; gap:12px; margin-top:14px; }
+.round-btn{
+  flex:1; min-height:52px; border-radius:var(--radius); border:none;
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.round-btn.skip{ background:var(--danger-soft); color:var(--danger); }
+.round-btn.like{ background:var(--ok-soft); color:var(--ok); }
+.round-btn.next{ background:var(--accent); color:#fff; }
+
+.empty{ text-align:center; color:var(--ink-faint); padding:64px 16px; font-size:14px; }
+
+/* ---------- избранное (список) ---------- */
+.fav-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px;
+}
+.fav-top{ display:flex; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.fav-position{ font-weight:600; font-size:15px; }
+.fav-meta{ color:var(--ink-soft); font-size:13px; margin-bottom:8px; }
+.fav-contact{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ok); }
+
+/* ---------- форма подачи ---------- */
+.field{ margin-bottom:14px; }
+.field > label{
+  display:block; font-family:'Chakra Petch',sans-serif; font-size:12px; color:var(--ink-soft);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;
+}
+.field > input, .field > textarea{
+  width:100%; min-height:44px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); padding:10px 12px; font-family:'Inter',sans-serif;
+  font-size:15px;
+}
+.field > textarea{ min-height:88px; resize:vertical; }
+.field > input[type=time]{
+  -webkit-appearance:none; appearance:none;
+  box-sizing:border-box; min-width:0; width:100%; text-align:left;
+  font-family:'JetBrains Mono',monospace;
+}
+.field > input[type=time]::-webkit-date-and-time-value{ text-align:left; margin:0; }
+
+.chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{ position:relative; }
+.chip input{ position:absolute; opacity:0; pointer-events:none; }
+.chip span{
+  display:flex; align-items:center; min-height:44px; padding:0 14px; border-radius:20px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); font-size:13px;
+}
+.chip input:checked + span{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+
+.phone-field{ display:flex; align-items:center; gap:8px; min-height:44px; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); padding:0 12px; }
+.phone-prefix{ font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink-soft); flex:none; }
+.phone-input{ flex:1; min-height:44px; border:none; background:transparent; color:var(--ink); font-family:'JetBrains Mono',monospace; font-size:16px; }
+.phone-input:focus{ outline:none; }
+
+.submit-bar{
+  position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + var(--safe-bottom));
+  background:var(--bg); border-top:1px solid var(--line);
+}
+.btn-primary{
+  width:100%; min-height:48px; border-radius:var(--radius); border:none;
+  background:var(--accent); color:#fff; font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-primary[disabled]{ opacity:.5; }
+
+/* ---------- success-panel ---------- */
+.success-panel{ text-align:center; padding:48px 16px; }
+.success-icon{
+  width:64px; height:64px; border-radius:50%; background:var(--ok-soft); color:var(--ok);
+  display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px;
+}
+.success-panel h2{ font-size:18px; margin:0 0 8px; }
+.success-panel p{ color:var(--ink-soft); font-size:14px; margin:0 0 20px; }
+
+.spinner{
+  width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff; animation:spin .6s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Будни_BY</h1>
+  <div class="tabs">
+    <button class="tab active" data-tab="deck">Вакансии</button>
+    <button class="tab" data-tab="favorites">Избранное <span id="favCount"></span></button>
+    <button class="tab" data-tab="subs">Подписки</button>
+    <button class="tab" data-tab="post">Разместить</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <div id="viewDeck">
+    <div class="deck-wrap" id="deckWrap"></div>
+    <div class="deck-actions" id="deckActions">
+      <button class="round-btn skip" id="skipBtn">✕ Пропустить</button>
+      <button class="round-btn like" id="likeBtn">♥ Нравится</button>
+    </div>
+  </div>
+
+  <div id="viewFavorites" class="hidden"></div>
+
+  <div id="viewSubs" class="hidden">
+    <p style="color:var(--ink-soft); font-size:13px; margin-top:0;">
+      Пришлём в бот все новые вакансии, которые подходят под город и/или ключевое слово (например: город «Слуцк», слово «водитель»)
+    </p>
+    <div class="field">
+      <label>Город</label>
+      <input type="text" id="subCity" placeholder="например, Слуцк">
+    </div>
+    <div class="field">
+      <label>Ключевое слово</label>
+      <input type="text" id="subKeyword" placeholder="например, водитель">
+    </div>
+    <button class="btn-primary" id="subAddBtn" style="margin-bottom:20px;">Подписаться</button>
+    <div id="subsList"></div>
+
+    <div style="height:1px; background:var(--line); margin:24px 0;"></div>
+
+    <h2 style="font-size:15px; margin:0 0 8px;">Знаете ещё канал с вакансиями?</h2>
+    <p style="color:var(--ink-soft); font-size:13px; margin-top:0;">
+      Пришлите ссылку на канал/группу (Telegram или Viber) — добавим в список источников
+    </p>
+    <div class="field">
+      <label>Платформа</label>
+      <div class="chip-group" id="srcPlatform">
+        <label class="chip"><input type="radio" name="srcPlatform" value="telegram" checked><span>Telegram</span></label>
+        <label class="chip"><input type="radio" name="srcPlatform" value="viber"><span>Viber</span></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ссылка на канал/группу</label>
+      <input type="text" id="srcLink" placeholder="например, t.me/nazvanie_kanala">
+    </div>
+    <div class="field">
+      <label>Город (если знаете)</label>
+      <input type="text" id="srcCity" placeholder="например, Слуцк">
+    </div>
+    <button class="btn-primary" id="srcSubmitBtn">Предложить источник</button>
+  </div>
+
+  <div id="viewPost" class="hidden">
+    <div class="field">
+      <label>Ваше имя</label>
+      <input type="text" id="fName" placeholder="как к вам обращаться">
+    </div>
+    <div class="field">
+      <label>Должность</label>
+      <input type="text" id="fPosition" placeholder="например, Продавец-консультант">
+    </div>
+    <div class="field">
+      <label>Компания</label>
+      <input type="text" id="fCompany" placeholder="название вашей организации">
+    </div>
+    <div class="field">
+      <label>Сфера</label>
+      <div class="chip-group" id="fSector"></div>
+    </div>
+    <div class="field">
+      <label>Город</label>
+      <input type="text" id="fCity" placeholder="например, Минск">
+    </div>
+    <div class="field">
+      <label>Зарплата</label>
+      <input type="text" id="fSalary" placeholder="например, от 1500 BYN">
+    </div>
+    <div class="field">
+      <label>Телефон для связи</label>
+      <div class="phone-field">
+        <span class="phone-prefix">+375</span>
+        <input type="tel" class="phone-input" id="fPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12">
+      </div>
+      <div class="hint hidden" id="prefillHint" style="color:var(--ok); font-size:12px; margin-top:6px;">
+        ✓ Имя и телефон подставлены из прошлой заявки — проверьте
+      </div>
+    </div>
+    <div class="field">
+      <label>Время ежедневной публикации</label>
+      <input type="time" id="fRepostTime" value="09:00">
+      <p style="color:var(--ink-faint); font-size:12px; margin:6px 0 0;">
+        Вакансия будет публиковаться в группе каждый день в это время — всего 7 дней, потом предложим продлить
+      </p>
+    </div>
+    <div class="field">
+      <label>Условия и обязанности</label>
+      <textarea id="fDescription" placeholder="график, требования, что предлагаете"></textarea>
+    </div>
+    <p style="color:var(--ink-faint); font-size:12px; text-align:center;">
+      Проверяется на признаки мошенничества перед публикацией — как и все объявления
+    </p>
+  </div>
+
+</div>
+
+<div class="submit-bar hidden" id="postSubmitBar">
+  <button class="btn-primary" id="postSubmitBtn">Разместить вакансию</button>
+</div>
+
+<script>
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+// ВСТАВЬ реальный URL деплоя Apps Script
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDoUgzfE7NIs1m57RapJbSMPdOMheg-e4I2qoyu6VPoBBQH9cigsGgprdtp00lOnbu/exec';
+
+const SECTORS = [
+  ['Производство и строительство','🏗️'], ['Транспорт и логистика','🚚'],
+  ['Торговля и услуги','🛍️'], ['Гостиничный и ресторанный бизнес','🏨'],
+  ['Сельское хозяйство','🌾'], ['Здравоохранение','🏥'], ['Образование','🎓'],
+  ['Финансы и бухгалтерия','📊'], ['IT и разработка','💻'], ['Охрана и безопасность','🛡️'],
+  ['Офис и администрирование','🗃️'], ['Клининг и уборка','🧹'], ['Другое','🗂️'],
+];
+
+function haptic(style) {
+  if (tg && tg.HapticFeedback) {
+    if (["success","error","warning"].includes(style)) tg.HapticFeedback.notificationOccurred(style);
+    else tg.HapticFeedback.impactOccurred(style || "light");
+  }
+}
+
+function applyTelegramTheme(){
+  const scheme = (tg && tg.colorScheme) ? tg.colorScheme
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', scheme);
+  if (tg) {
+    const s = getComputedStyle(document.documentElement);
+    try { tg.setHeaderColor(s.getPropertyValue("--surface").trim()); tg.setBackgroundColor(s.getPropertyValue("--bg").trim()); } catch(e) {}
+  }
+}
+
+function alertAsync(message){
+  return new Promise((resolve)=>{
+    if (tg && tg.showAlert && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+      try { tg.showAlert(message, resolve); return; } catch(e) {}
+    }
+    window.alert(message); resolve();
+  });
+}
+
+function initTelegram() {
+  if (!tg) return;
+  tg.ready(); tg.expand();
+  applyTelegramTheme();
+  tg.onEvent && tg.onEvent('themeChanged', applyTelegramTheme);
+  if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) { try { tg.disableVerticalSwipes(); } catch(e) {} }
+}
+
+// ---------- пользователь: реальный Telegram ID, либо демо-id для теста вне Telegram ----------
+function getOrCreateDemoUser(){
+  let id = localStorage.getItem('budni_demo_id');
+  if (!id) { id = 'demo-' + Math.random().toString(36).slice(2, 10); localStorage.setItem('budni_demo_id', id); }
+  return { id: id, username: 'гость' };
+}
+const telegramUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : getOrCreateDemoUser();
+
+// ---------- API (все действия — публичные, но требуют tg.initData) ----------
+async function apiPost(payload){
+  // initData — подпись Telegram, подтверждающая, что telegramId настоящий,
+  // а не придуман на клиенте. Бэкенд проверяет её для чувствительных действий.
+  const withAuth = Object.assign({ initData: tg ? tg.initData : '' }, payload);
+  const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(withAuth) });
+  return res.json();
+}
+
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+// ---------- вкладки ----------
+document.querySelectorAll('.tab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    haptic('light');
+    const tab = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b === btn); });
+    document.getElementById('viewDeck').classList.toggle('hidden', tab !== 'deck');
+    document.getElementById('viewFavorites').classList.toggle('hidden', tab !== 'favorites');
+    document.getElementById('viewSubs').classList.toggle('hidden', tab !== 'subs');
+    document.getElementById('viewPost').classList.toggle('hidden', tab !== 'post');
+    document.getElementById('deckActions').classList.toggle('hidden', tab !== 'deck');
+    document.getElementById('postSubmitBar').classList.toggle('hidden', tab !== 'post');
+    if (tab === 'favorites') loadFavorites();
+    if (tab === 'subs') loadSubscriptions();
+  });
+});
+
+// ================= СВАЙП-ЛЕНТА =================
+let DECK = [];
+let DECK_INDEX = 0;
+let liked = false; // раскрыт ли контакт на текущей карточке
+
+async function loadDeck(){
+  const wrap = document.getElementById('deckWrap');
+  wrap.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiPost({ action: 'get_deck' });
+  if (!res.ok) { wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии</div>'; return; }
+  DECK = res.deck || [];
+  DECK_INDEX = 0;
+  renderCard();
+}
+
+function renderCard(){
+  const wrap = document.getElementById('deckWrap');
+  liked = false;
+  if (DECK_INDEX >= DECK.length) {
+    wrap.innerHTML = '<div class="empty">Пока вакансий больше нет — загляните позже 👋</div>';
+    document.getElementById('deckActions').classList.add('hidden');
+    return;
+  }
+  document.getElementById('deckActions').classList.remove('hidden');
+  const v = DECK[DECK_INDEX];
+  wrap.innerHTML =
+    '<div class="card" id="activeCard">' +
+      '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
+      '<div class="swipe-tag skip" id="tagSkip">СКИП</div>' +
+      '<div class="card-badges">' +
+        (v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая вакансия</span>' : '') +
+        '<span class="badge">' + escapeHtml(v.city || '') + '</span>' +
+        (v.salary_text ? '<span class="badge">' + escapeHtml(v.salary_text) + '</span>' : '') +
+      '</div>' +
+      '<h2>' + escapeHtml(v.position || '(без названия)') + '</h2>' +
+      (v.company ? '<div class="card-company">' + escapeHtml(v.company) + '</div>' : '') +
+      '<div class="card-body">' + escapeHtml(v.clean_text || '') + '</div>' +
+      '<div class="card-contact" id="cardContact">' +
+        '<div>📞 ' + escapeHtml(v.phone || 'контакт в тексте выше') + '</div>' +
+      '</div>' +
+    '</div>';
+  bindCardGestures(document.getElementById('activeCard'));
+}
+
+function bindCardGestures(card){
+  let startX = 0, startY = 0, dx = 0, dragging = false;
+
+  card.addEventListener('pointerdown', function(e){
+    if (liked) return; // после лайка не даём утащить карточку, ждём "Дальше"
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    card.setPointerCapture(e.pointerId);
+  });
+  card.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    card.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (dx / 18) + 'deg)';
+    document.getElementById('tagLike').style.opacity = Math.max(0, dx / 100);
+    document.getElementById('tagSkip').style.opacity = Math.max(0, -dx / 100);
+  });
+  card.addEventListener('pointerup', function(){
+    if (!dragging) return;
+    dragging = false;
+    if (Math.abs(dx) > 90) {
+      finishSwipe(dx > 0 ? 'like' : 'skip', card, dx);
+    } else {
+      card.style.transition = 'transform .2s';
+      card.style.transform = '';
+      setTimeout(function(){ card.style.transition = ''; }, 200);
+      document.getElementById('tagLike').style.opacity = 0;
+      document.getElementById('tagSkip').style.opacity = 0;
+    }
+    dx = 0;
+  });
+}
+
+function finishSwipe(decision, card, dxAtRelease){
+  haptic(decision === 'like' ? 'success' : 'light');
+  const v = DECK[DECK_INDEX];
+  apiPost({
+    action: 'record_swipe', telegramId: telegramUser.id, username: telegramUser.username || '',
+    vacancyId: v.id, sector: v.sector, decision: decision,
+  }).catch(function(){});
+
+  if (decision === 'skip') {
+    const flyX = (dxAtRelease >= 0 ? 1 : -1) * 600;
+    card.style.transition = 'transform .25s ease-out';
+    card.style.transform = 'translate(' + flyX + 'px, 0) rotate(' + (flyX / 18) + 'deg)';
+    setTimeout(function(){ DECK_INDEX++; renderCard(); }, 220);
+    return;
+  }
+
+  // like — раскрываем контакт на месте, не перелистываем сразу
+  liked = true;
+  card.style.transition = 'transform .2s';
+  card.style.transform = '';
+  document.getElementById('cardContact').classList.add('show');
+  document.getElementById('tagLike').style.opacity = 1;
+  document.getElementById('skipBtn').classList.add('hidden');
+  document.getElementById('likeBtn').textContent = 'Дальше →';
+  document.getElementById('likeBtn').onclick = function(){
+    document.getElementById('likeBtn').textContent = '♥ Нравится';
+    document.getElementById('likeBtn').onclick = null;
+    document.getElementById('skipBtn').classList.remove('hidden');
+    bindDeckButtons();
+    DECK_INDEX++; renderCard();
+  };
+}
+
+function bindDeckButtons(){
+  document.getElementById('skipBtn').onclick = function(){
+    const card = document.getElementById('activeCard');
+    if (card) finishSwipe('skip', card, -1);
+  };
+  document.getElementById('likeBtn').onclick = function(){
+    const card = document.getElementById('activeCard');
+    if (card) finishSwipe('like', card, 1);
+  };
+}
+bindDeckButtons();
+
+// ================= ИЗБРАННОЕ =================
+async function loadFavorites(){
+  const el = document.getElementById('viewFavorites');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiPost({ action: 'get_favorites' });
+  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  const favs = res.favorites || [];
+  document.getElementById('favCount').textContent = favs.length ? '(' + favs.length + ')' : '';
+  if (favs.length === 0) {
+    el.innerHTML = '<div class="empty">Пока пусто — свайпните вправо понравившуюся вакансию 👉</div>';
+    return;
+  }
+  el.innerHTML = favs.map(function(v){
+    const contact = [v.phone, v.contact_username, v.email].filter(Boolean).join(' · ');
+    return '<div class="fav-card">' +
+      '<div class="fav-top"><div class="fav-position">' + escapeHtml(v.position || '') + '</div>' +
+      (v.source === 'employer' ? '<span class="badge badge-employer">✓</span>' : '') + '</div>' +
+      '<div class="fav-meta">' + escapeHtml([v.company, v.city, v.salary_text].filter(Boolean).join(' · ')) + '</div>' +
+      (contact ? '<div class="fav-contact">' + escapeHtml(contact) + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+// ================= ПОДПИСКИ =================
+async function loadSubscriptions(){
+  const el = document.getElementById('subsList');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiPost({ action: 'list_subscriptions' });
+  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  const subs = res.subscriptions || [];
+  if (subs.length === 0) {
+    el.innerHTML = '<div class="empty">Подписок пока нет</div>';
+    return;
+  }
+  el.innerHTML = subs.map(function(s){
+    const label = [s.city, s.keyword].filter(Boolean).join(' · ');
+    return '<div class="fav-card" style="display:flex; align-items:center; justify-content:space-between;">' +
+      '<span>' + escapeHtml(label) + '</span>' +
+      '<button class="round-btn skip" style="flex:none; min-height:36px; padding:0 14px;" data-remove-sub="' + escapeHtml(s.id) + '">✕</button>' +
+    '</div>';
+  }).join('');
+  el.querySelectorAll('[data-remove-sub]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      haptic('light');
+      btn.disabled = true;
+      await apiPost({ action: 'remove_subscription', id: btn.getAttribute('data-remove-sub') }).catch(function(){});
+      loadSubscriptions();
+    });
+  });
+}
+
+document.getElementById('subAddBtn').addEventListener('click', async function(){
+  const btn = this;
+  const city = document.getElementById('subCity').value.trim();
+  const keyword = document.getElementById('subKeyword').value.trim();
+  if (!city && !keyword) { await alertAsync('Укажите город и/или ключевое слово'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const res = await apiPost({ action: 'add_subscription', city: city, keyword: keyword }).catch(function(){ return { ok:false }; });
+  btn.disabled = false;
+  btn.textContent = 'Подписаться';
+
+  if (!res.ok) { haptic('error'); await alertAsync('Не получилось подписаться'); return; }
+  haptic('success');
+  document.getElementById('subCity').value = '';
+  document.getElementById('subKeyword').value = '';
+  loadSubscriptions();
+});
+
+// ---------- предложить источник (канал/группа) ----------
+document.getElementById('srcSubmitBtn').addEventListener('click', async function(){
+  const btn = this;
+  const link = document.getElementById('srcLink').value.trim();
+  const city = document.getElementById('srcCity').value.trim();
+  const platform = document.querySelector('input[name="srcPlatform"]:checked').value;
+  if (!link) { await alertAsync('Вставьте ссылку на канал или группу'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const res = await apiPost({ action: 'suggest_source', link: link, platform: platform, city: city })
+    .catch(function(){ return { ok:false }; });
+  btn.disabled = false;
+  btn.textContent = 'Предложить источник';
+
+  if (!res.ok) { haptic('error'); await alertAsync('Не получилось отправить'); return; }
+  haptic('success');
+  document.getElementById('srcLink').value = '';
+  document.getElementById('srcCity').value = '';
+  await alertAsync(res.duplicate ? 'Такой источник уже предложен' : 'Спасибо! Проверим и добавим в парсинг');
+});
+
+// ================= РАЗМЕСТИТЬ ВАКАНСИЮ =================
+let selectedSector = '';
+(function renderSectorChips(){
+  const el = document.getElementById('fSector');
+  el.innerHTML = SECTORS.map(function(s, i){
+    return '<label class="chip"><input type="radio" name="sector" value="' + s[0] + '"' + (i === 0 ? ' checked' : '') + '>' +
+      '<span>' + s[1] + ' ' + s[0] + '</span></label>';
+  }).join('');
+  selectedSector = SECTORS[0][0];
+  el.querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('change', function(){ selectedSector = inp.value; haptic('light'); });
+  });
+})();
+
+const phoneInput = document.getElementById('fPhone');
+phoneInput.addEventListener('input', function(){
+  const digits = phoneInput.value.replace(/\D/g,'').slice(0,9);
+  let out = digits;
+  if (digits.length > 2) out = digits.slice(0,2) + '-' + digits.slice(2);
+  if (digits.length > 5) out = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5);
+  if (digits.length > 7) out = digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5,7) + '-' + digits.slice(7);
+  phoneInput.value = out;
+});
+
+document.getElementById('postSubmitBtn').addEventListener('click', async function(){
+  const btn = this;
+  const position = document.getElementById('fPosition').value.trim();
+  const phoneDigits = phoneInput.value.replace(/\D/g,'');
+  if (!position) { await alertAsync('Укажите должность'); return; }
+  if (phoneDigits.length !== 9) { await alertAsync('Проверьте номер телефона'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Отправляем…';
+  haptic('light');
+
+  const res = await apiPost({
+    action: 'submit_vacancy',
+    telegramId: telegramUser.id, username: telegramUser.username || '',
+    name: document.getElementById('fName').value.trim(),
+    position: position, company: document.getElementById('fCompany').value.trim(),
+    sector: selectedSector, city: document.getElementById('fCity').value.trim(),
+    salaryText: document.getElementById('fSalary').value.trim(),
+    phone: '+375' + phoneDigits,
+    repostTime: document.getElementById('fRepostTime').value || '09:00',
+    description: document.getElementById('fDescription').value.trim(),
+  }).catch(function(){ return { ok:false }; });
+
+  if (!res.ok) {
+    haptic('error');
+    btn.disabled = false; btn.innerHTML = 'Разместить вакансию';
+    await alertAsync(res.duplicate ? res.error : 'Не получилось отправить, попробуйте ещё раз');
+    return;
+  }
+
+  haptic('success');
+  document.getElementById('postSubmitBar').classList.add('hidden');
+  document.getElementById('viewPost').innerHTML =
+    '<div class="success-panel">' +
+      '<div class="success-icon">✓</div>' +
+      '<h2>Вакансия отправлена</h2>' +
+      '<p>' + (res.suspicious
+        ? 'Уйдёт в публикацию после ручной проверки — обычно это быстро.'
+        : 'Уже в общей ленте и будет публиковаться в топике группы каждый день в выбранное время — 7 дней.') + '</p>' +
+    '</div>';
+});
+
+// ---------- КОНТАКТЫ: визиты + автоподстановка имени/телефона ----------
+async function prefillFromContact(){
+  if (!telegramUser || !telegramUser.id) return;
+  try {
+    const res = await apiPost({ action: 'visit', telegramId: telegramUser.id, username: telegramUser.username || '' });
+    if (!res || !res.ok) return;
+    const nameEl = document.getElementById('fName');
+    let filled = false;
+    if (res.name && !nameEl.value.trim()) { nameEl.value = res.name; filled = true; }
+    if (res.known && res.phone && !phoneInput.value.trim()) {
+      let d = String(res.phone).replace(/\D/g, '');
+      if (d.length > 9 && d.slice(0, 3) === '375') d = d.slice(3);
+      d = d.slice(-9);
+      if (d.length === 9) {
+        phoneInput.value = d.slice(0,2) + '-' + d.slice(2,5) + '-' + d.slice(5,7) + '-' + d.slice(7);
+        filled = true;
+      }
+    }
+    if (filled) document.getElementById('prefillHint').classList.remove('hidden');
+  } catch(e){}
+}
+
+// ---------- продление по ссылке из уведомления «истёк срок» ----------
+async function handleRenewParam(){
+  const params = new URLSearchParams(window.location.search);
+  const renewId = params.get('renew');
+  if (!renewId) return;
+  const res = await apiPost({ action: 'renew_vacancy', id: renewId }).catch(function(){ return { ok:false }; });
+  await alertAsync(res.ok ? 'Вакансия продлена ещё на 7 дней ✓' : ('Не получилось продлить: ' + (res.error || '')));
+}
+
+// ---------- старт ----------
+initTelegram();
+loadDeck();
+prefillFromContact();
+handleRenewParam();
+</script>
+</body>
+</html>

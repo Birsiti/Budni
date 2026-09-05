@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Будни_BY · Админ</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var scheme = (tg && tg.colorScheme) ? tg.colorScheme
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', scheme);
+})();
+</script>
+
+<style>
+:root{
+  --radius:14px; --radius-sm:10px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1A1E22; --surface-2:#20252A; --surface-3:#262B31;
+  --ink:#EDEFF0; --ink-soft:#8C949C; --ink-faint:#565D64;
+  --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.14);
+  --ok:#38A89D; --ok-soft:rgba(56,168,157,.14);
+  --danger:#E5626A; --danger-soft:rgba(229,98,106,.12);
+  --line:#2A2F35; --line-strong:#3A414A;
+}
+:root[data-theme="light"]{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EEF1F4; --surface-3:#E4E8EC;
+  --ink:#171A1D; --ink-soft:#5B6570; --ink-faint:#98A1AA;
+  --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.12);
+  --ok:#2E9B8F; --ok-soft:rgba(46,155,143,.12);
+  --danger:#D6505A; --danger-soft:rgba(214,80,90,.10);
+  --line:#E2E6EA; --line-strong:#CDD3D9;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Inter',sans-serif; font-size:15px; line-height:1.4;
+  padding-top:max(12px, var(--safe-top));
+  padding-bottom:max(24px, calc(24px + var(--safe-bottom)));
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,.label{ font-family:'Chakra Petch',sans-serif; }
+.mono{ font-family:'JetBrains Mono',monospace; }
+.hidden{ display:none !important; }
+
+/* ---------- шапка ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 16px 16px;
+}
+.topbar h1{ font-size:18px; font-weight:700; margin:0; }
+.refresh-btn{
+  min-width:44px; min-height:44px; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid var(--line);
+  color:var(--ink-soft); font-size:18px; display:flex; align-items:center; justify-content:center;
+  flex:none;
+}
+.refresh-btn:active{ background:var(--surface-3); }
+.topbar-actions{ display:flex; align-items:center; gap:8px; }
+.pause-toggle{
+  display:flex; align-items:center; gap:8px;
+  min-height:44px; padding:0 14px; border-radius:999px;
+  border:1px solid var(--line); background:var(--surface-2);
+  font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+  color:var(--ink-soft); white-space:nowrap;
+}
+.pause-toggle .dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none; }
+.pause-toggle:active{ background:var(--surface-3); }
+.pause-toggle.is-paused{ color:var(--danger); border-color:var(--danger-soft); background:var(--danger-soft); }
+.pause-toggle.is-paused .dot{ background:var(--danger); }
+.pause-toggle.is-paused:active{ background:var(--danger-soft); }
+
+/* ---------- вкладки ---------- */
+.tabs{
+  display:flex; gap:8px; padding:0 16px 16px; position:sticky; top:0; z-index:5;
+  background:var(--bg);
+}
+.tab{
+  flex:1; min-height:44px; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid var(--line);
+  color:var(--ink-soft); font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:14px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.tab.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+.tab .count{
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  background:var(--surface-3); border-radius:20px; padding:1px 7px;
+}
+.tab.active .count{ background:var(--accent); color:#fff; }
+
+.content{ padding:0 16px; }
+
+/* ---------- карточка вакансии (модерация) ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px;
+}
+.card-top{ display:flex; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.card-position{ font-weight:600; font-size:15px; }
+.card-sector{
+  font-size:11px; color:var(--ink-soft); background:var(--surface-2);
+  border-radius:20px; padding:2px 8px; white-space:nowrap; flex:none;
+}
+.card-meta{ color:var(--ink-soft); font-size:13px; margin-bottom:8px; }
+.card-reason{
+  background:var(--danger-soft); color:var(--danger); border-radius:var(--radius-sm);
+  padding:8px 10px; font-size:13px; margin-bottom:10px;
+}
+.card-text{
+  color:var(--ink-soft); font-size:13px; white-space:pre-line;
+  max-height:0; overflow:hidden; transition:max-height .2s;
+}
+.card-text.open{ max-height:400px; margin-bottom:10px; }
+.card-toggle{
+  color:var(--accent); font-size:13px; background:none; border:none; padding:0 0 10px; text-align:left;
+}
+.card-actions{ display:flex; gap:8px; }
+.btn{
+  flex:1; min-height:44px; border-radius:var(--radius-sm); border:none;
+  font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:14px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-approve{ background:var(--ok-soft); color:var(--ok); }
+.btn-approve:active{ background:var(--ok); color:#fff; }
+.btn-reject{ background:var(--danger-soft); color:var(--danger); }
+.btn-reject:active{ background:var(--danger); color:#fff; }
+.btn[disabled]{ opacity:.5; }
+
+.empty{
+  text-align:center; color:var(--ink-faint); padding:48px 16px; font-size:14px;
+}
+
+/* ---------- статистика ---------- */
+.stat-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;
+}
+.stat-tile{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px;
+}
+.stat-value{ font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:600; }
+.stat-label{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+
+.sector-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
+}
+.sector-row:last-child{ border-bottom:none; }
+.sector-count{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); }
+
+/* ---------- экран токена ---------- */
+.gate{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:24px; gap:12px;
+}
+.gate h1{ font-size:20px; margin:0 0 4px; }
+.gate p{ color:var(--ink-soft); font-size:13px; margin:0 0 12px; }
+.gate input{
+  min-height:44px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); padding:0 12px; font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+}
+.gate .btn{ background:var(--accent); color:#fff; }
+.gate .btn:active{ background:var(--accent-dark); }
+
+.spinner{
+  width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff; animation:spin .6s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- источники ---------- */
+.field{ margin-bottom:12px; }
+.field > label{
+  display:block; font-family:'Chakra Petch',sans-serif; font-size:11px; color:var(--ink-soft);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;
+}
+.field > input{
+  width:100%; min-height:44px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); padding:0 12px; font-family:'Inter',sans-serif; font-size:14px;
+}
+.chip-group{ display:flex; gap:8px; }
+.chip{ position:relative; }
+.chip input{ position:absolute; opacity:0; pointer-events:none; }
+.chip span{
+  display:flex; align-items:center; min-height:40px; padding:0 14px; border-radius:20px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); font-size:13px;
+}
+.chip input:checked + span{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+
+.section-title{
+  font-family:'Chakra Petch',sans-serif; font-size:13px; color:var(--ink-soft);
+  text-transform:uppercase; letter-spacing:.02em; margin:20px 0 10px;
+}
+.badge{
+  font-size:11px; padding:2px 8px; border-radius:20px; background:var(--surface-2); color:var(--ink-soft);
+  white-space:nowrap;
+}
+.badge-viber{ background:var(--danger-soft); color:var(--danger); }
+.src-row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 0; border-bottom:1px solid var(--line);
+}
+.src-row:last-child{ border-bottom:none; }
+.src-link{ font-size:13px; word-break:break-all; }
+.src-meta{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:2px; }
+.src-actions{ display:flex; gap:6px; flex:none; }
+.icon-btn{
+  min-width:36px; min-height:36px; border-radius:var(--radius-sm); border:none;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate hidden">
+  <h1>Будни_BY · Админ</h1>
+  <p>Вставь токен моста (тот же, что в BUDNI_BRIDGE_TOKEN) — сохранится только в этом браузере, не отправляется никуда, кроме твоего Apps Script.</p>
+  <input type="text" id="tokenInput" placeholder="токен" autocomplete="off">
+  <button class="btn" id="tokenSave">Сохранить</button>
+</div>
+
+<div id="app" class="hidden">
+  <div class="topbar">
+    <h1>Будни_BY · Админ</h1>
+    <div class="topbar-actions">
+      <button class="pause-toggle" id="pauseToggle" aria-label="Переключить публикацию">
+        <span class="dot"></span><span id="pauseLabel">Публикация: идёт</span>
+      </button>
+      <button class="refresh-btn" id="refreshBtn" aria-label="Обновить">↻</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabModeration" data-tab="moderation">
+      Модерация <span class="count" id="modCount">0</span>
+    </button>
+    <button class="tab" id="tabSources" data-tab="sources">
+      Источники <span class="count" id="srcCount">0</span>
+    </button>
+    <button class="tab" id="tabStats" data-tab="stats">Статистика</button>
+  </div>
+
+  <div class="content">
+    <div id="viewModeration"></div>
+    <div id="viewSources" class="hidden"></div>
+    <div id="viewStats" class="hidden"></div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+const TOKEN_KEY = 'budni_admin_token';
+// ВСТАВЬ реальный URL деплоя Apps Script (тот же, что в BUDNI_APPS_SCRIPT_URL)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDoUgzfE7NIs1m57RapJbSMPdOMheg-e4I2qoyu6VPoBBQH9cigsGgprdtp00lOnbu/exec';
+
+function haptic(style) {
+  if (tg && tg.HapticFeedback) {
+    if (["success","error","warning"].includes(style)) tg.HapticFeedback.notificationOccurred(style);
+    else tg.HapticFeedback.impactOccurred(style || "light");
+  }
+}
+
+function applyTelegramTheme(){
+  const scheme = (tg && tg.colorScheme) ? tg.colorScheme
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', scheme);
+  if (tg) {
+    const s = getComputedStyle(document.documentElement);
+    try { tg.setHeaderColor(s.getPropertyValue("--surface").trim()); tg.setBackgroundColor(s.getPropertyValue("--bg").trim()); } catch(e) {}
+  }
+}
+
+function confirmAsync(message){
+  return new Promise((resolve)=>{
+    if (tg && tg.showConfirm && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+      try { tg.showConfirm(message, resolve); return; } catch(e) {}
+    }
+    resolve(window.confirm(message));
+  });
+}
+
+function alertAsync(message){
+  return new Promise((resolve)=>{
+    if (tg && tg.showAlert && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+      try { tg.showAlert(message, resolve); return; } catch(e) {}
+    }
+    window.alert(message); resolve();
+  });
+}
+
+function initTelegram() {
+  if (!tg) return;
+  tg.ready(); tg.expand();
+  applyTelegramTheme();
+  tg.onEvent && tg.onEvent('themeChanged', applyTelegramTheme);
+  if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) { try { tg.disableVerticalSwipes(); } catch(e) {} }
+}
+
+// ---------- токен и API ----------
+function getToken(){ return localStorage.getItem(TOKEN_KEY) || ''; }
+
+async function apiGet(action){
+  const url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&token=' + encodeURIComponent(getToken());
+  const res = await fetch(url);
+  return res.json();
+}
+
+// без явного Content-Type — иначе браузер шлёт preflight OPTIONS,
+// который Apps Script веб-апп не обрабатывает
+async function apiPost(payload){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(Object.assign({ token: getToken() }, payload)),
+  });
+  return res.json();
+}
+
+// ---------- состояние ----------
+let STATE = { suspicious: [], stats: null, loading: false, paused: false };
+
+async function loadData(){
+  if (STATE.loading) return;
+  STATE.loading = true;
+  const res = await apiGet('admin_data');
+  STATE.loading = false;
+  if (!res.ok) {
+    await alertAsync('Ошибка загрузки: ' + (res.error || 'неизвестная'));
+    return;
+  }
+  STATE.suspicious = res.suspicious || [];
+  STATE.stats = res.stats;
+  STATE.paused = !!res.paused;
+  renderModeration();
+  renderStats();
+  renderPauseToggle();
+  document.getElementById('modCount').textContent = STATE.suspicious.length;
+}
+
+// ---------- стоп-кран публикации ----------
+function renderPauseToggle(){
+  document.getElementById('pauseToggle').classList.toggle('is-paused', STATE.paused);
+  document.getElementById('pauseLabel').textContent = STATE.paused ? 'Публикация: на паузе' : 'Публикация: идёт';
+}
+
+document.getElementById('pauseToggle').addEventListener('click', async function(){
+  haptic('light');
+  const next = !STATE.paused;
+  const res = await apiPost({ action: 'set_publish_pause', paused: next });
+  if (!res.ok) {
+    await alertAsync('Не удалось изменить: ' + (res.error || 'неизвестная ошибка'));
+    return;
+  }
+  STATE.paused = !!res.paused;
+  renderPauseToggle();
+  haptic(STATE.paused ? 'warning' : 'success');
+});
+
+// ---------- модерация ----------
+function renderModeration(){
+  const el = document.getElementById('viewModeration');
+  if (STATE.suspicious.length === 0) {
+    el.innerHTML = '<div class="empty">Нет вакансий на проверке 👍</div>';
+    return;
+  }
+  el.innerHTML = STATE.suspicious.map(function(v, i){
+    const meta = [v.city, v.salary_text].filter(Boolean).join(' · ');
+    return '<div class="card" data-idx="' + i + '">' +
+      '<div class="card-top">' +
+        '<div class="card-position">' + escapeHtml(v.position || '(без должности)') + '</div>' +
+        '<div class="card-sector">' + escapeHtml(v.sector) + '</div>' +
+      '</div>' +
+      (meta ? '<div class="card-meta">' + escapeHtml(meta) + '</div>' : '') +
+      '<div class="card-reason">⚠️ ' + escapeHtml(v.suspicious_reason || 'без причины') + '</div>' +
+      '<button class="card-toggle" data-toggle="' + i + '">Показать полный текст ▾</button>' +
+      '<div class="card-text" id="text-' + i + '">' + escapeHtml(v.clean_text || '') + '</div>' +
+      '<div class="card-actions">' +
+        '<button class="btn btn-approve" data-approve="' + i + '">✓ Одобрить</button>' +
+        '<button class="btn btn-reject" data-reject="' + i + '">✕ Отклонить</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  el.querySelectorAll('[data-toggle]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const idx = btn.getAttribute('data-toggle');
+      document.getElementById('text-' + idx).classList.toggle('open');
+      haptic('light');
+    });
+  });
+  el.querySelectorAll('[data-approve]').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleDecision(btn, 'approve'); });
+  });
+  el.querySelectorAll('[data-reject]').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleDecision(btn, 'reject'); });
+  });
+}
+
+async function handleDecision(btn, kind){
+  const idx = parseInt(btn.getAttribute('data-approve') || btn.getAttribute('data-reject'), 10);
+  const item = STATE.suspicious[idx];
+  if (!item) return;
+
+  const question = kind === 'approve'
+    ? 'Одобрить и поставить в очередь публикации?'
+    : 'Отклонить эту вакансию?';
+  const ok = await confirmAsync(question);
+  if (!ok) return;
+
+  const card = btn.closest('.card');
+  card.querySelectorAll('.btn').forEach(function(b){ b.setAttribute('disabled', 'true'); });
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const action = kind === 'approve' ? 'approve_vacancy' : 'reject_vacancy';
+  const res = await apiPost({ action: action, id: item.id, sector: item.sector });
+
+  if (res.ok) {
+    haptic('success');
+    STATE.suspicious.splice(idx, 1);
+    renderModeration();
+    document.getElementById('modCount').textContent = STATE.suspicious.length;
+  } else {
+    haptic('error');
+    await alertAsync('Не получилось: ' + (res.error || 'неизвестная ошибка'));
+    card.querySelectorAll('.btn').forEach(function(b){ b.removeAttribute('disabled'); });
+    renderModeration();
+  }
+}
+
+// ---------- источники ----------
+STATE.sources = [];
+
+async function loadSources(){
+  const el = document.getElementById('viewSources');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiPost({ action: 'list_sources' });
+  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  STATE.sources = res.sources || [];
+  renderSources();
+}
+
+function platformBadge(platform){
+  return platform === 'viber'
+    ? '<span class="badge badge-viber">Viber — без парсинга</span>'
+    : '<span class="badge">Telegram</span>';
+}
+
+function renderSources(){
+  const el = document.getElementById('viewSources');
+  const pending = STATE.sources.filter(function(s){ return s.status === 'pending'; });
+  const approved = STATE.sources.filter(function(s){ return s.status === 'approved'; });
+  document.getElementById('srcCount').textContent = pending.length;
+
+  const addForm =
+    '<div class="section-title">Добавить источник самому</div>' +
+    '<div class="field"><label>Ссылка</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala"></div>' +
+    '<div class="field"><label>Платформа</label>' +
+      '<div class="chip-group">' +
+        '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
+        '<label class="chip"><input type="radio" name="srcNewPlatform" value="viber"><span>Viber</span></label>' +
+      '</div>' +
+    '</div>' +
+    '<div class="field"><label>Город</label><input type="text" id="srcNewCity" placeholder="например, Слуцк"></div>' +
+    '<button class="btn btn-approve" id="srcAddBtn" style="width:100%; margin-bottom:8px;">+ Добавить</button>';
+
+  const pendingHtml = pending.length === 0
+    ? '<div class="empty">Нет предложенных источников на рассмотрении</div>'
+    : pending.map(function(s, i){
+        return '<div class="src-row">' +
+          '<div><div class="src-link">' + escapeHtml(s.link) + '</div>' +
+          '<div class="src-meta">' + platformBadge(s.platform) +
+            (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + '</div></div>' +
+          '<div class="src-actions">' +
+            '<button class="icon-btn btn-approve" data-src-approve="' + escapeHtml(s.id) + '">✓</button>' +
+            '<button class="icon-btn btn-reject" data-src-reject="' + escapeHtml(s.id) + '">✕</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+  const approvedHtml = approved.length === 0
+    ? '<div class="empty">Одобренных источников пока нет</div>'
+    : approved.map(function(s){
+        return '<div class="src-row">' +
+          '<div><div class="src-link">' + escapeHtml(s.link) + '</div>' +
+          '<div class="src-meta">' + platformBadge(s.platform) +
+            (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + '</div></div>' +
+          '<div class="src-actions">' +
+            '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+  el.innerHTML =
+    '<div class="card">' + addForm + '</div>' +
+    '<div class="section-title">На рассмотрении (' + pending.length + ')</div>' +
+    '<div class="card">' + pendingHtml + '</div>' +
+    '<div class="section-title">Одобренные — парсятся (' + approved.filter(function(s){return s.platform!=='viber';}).length + ') / Viber без парсинга (' + approved.filter(function(s){return s.platform==='viber';}).length + ')</div>' +
+    '<div class="card">' + approvedHtml + '</div>';
+
+  document.getElementById('srcAddBtn').addEventListener('click', async function(){
+    const btn = this;
+    const link = document.getElementById('srcNewLink').value.trim();
+    const city = document.getElementById('srcNewCity').value.trim();
+    const platform = document.querySelector('input[name="srcNewPlatform"]:checked').value;
+    if (!link) { await alertAsync('Укажите ссылку'); return; }
+    btn.disabled = true;
+    const res = await apiPost({ action: 'add_source', link: link, platform: platform, city: city });
+    btn.disabled = false;
+    if (!res.ok) { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); return; }
+    haptic('success');
+    loadSources();
+  });
+
+  el.querySelectorAll('[data-src-approve]').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleSourceAction(btn, 'approve_source', btn.getAttribute('data-src-approve')); });
+  });
+  el.querySelectorAll('[data-src-reject]').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleSourceAction(btn, 'reject_source', btn.getAttribute('data-src-reject')); });
+  });
+  el.querySelectorAll('[data-src-remove]').forEach(function(btn){
+    btn.addEventListener('click', function(){ handleSourceAction(btn, 'remove_source', btn.getAttribute('data-src-remove')); });
+  });
+}
+
+async function handleSourceAction(btn, action, id){
+  btn.disabled = true;
+  const res = await apiPost({ action: action, id: id });
+  if (!res.ok) {
+    haptic('error');
+    await alertAsync('Не получилось: ' + (res.error || ''));
+    btn.disabled = false;
+    return;
+  }
+  haptic('success');
+  loadSources();
+}
+
+// ---------- статистика ----------
+function renderBreakdown(obj, limit){
+  const keys = Object.keys(obj || {}).sort(function(a, b){ return obj[b] - obj[a]; });
+  const shown = limit ? keys.slice(0, limit) : keys;
+  if (shown.length === 0) return '<div class="empty">Нет данных</div>';
+  return shown.map(function(key){
+    return '<div class="sector-row"><span>' + escapeHtml(key) + '</span>' +
+      '<span class="sector-count">' + obj[key] + '</span></div>';
+  }).join('');
+}
+
+function renderStats(){
+  const el = document.getElementById('viewStats');
+  if (!STATE.stats) { el.innerHTML = ''; return; }
+  const s = STATE.stats;
+
+  el.innerHTML =
+    '<div class="stat-grid">' +
+      '<div class="stat-tile"><div class="stat-value mono">' + s.queueLength + '</div><div class="stat-label">в очереди на публикацию</div></div>' +
+      '<div class="stat-tile"><div class="stat-value mono">' + s.publishedToday + '</div><div class="stat-label">опубликовано сегодня</div></div>' +
+      '<div class="stat-tile"><div class="stat-value mono">' + s.publishedTotal + '</div><div class="stat-label">опубликовано всего</div></div>' +
+    '</div>' +
+    '<div class="section-title">По сферам</div>' +
+    '<div class="card">' + renderBreakdown(s.bySector) + '</div>' +
+    '<div class="section-title">По каналам</div>' +
+    '<div class="card">' + renderBreakdown(s.byChannel, 15) + '</div>' +
+    '<div class="section-title">По городам</div>' +
+    '<div class="card">' + renderBreakdown(s.byCity, 15) + '</div>';
+}
+
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+// ---------- вкладки ----------
+document.getElementById('tabModeration').addEventListener('click', function(){ switchTab('moderation'); });
+document.getElementById('tabSources').addEventListener('click', function(){ switchTab('sources'); loadSources(); });
+document.getElementById('tabStats').addEventListener('click', function(){ switchTab('stats'); });
+
+function switchTab(tab){
+  haptic('light');
+  document.getElementById('tabModeration').classList.toggle('active', tab === 'moderation');
+  document.getElementById('tabSources').classList.toggle('active', tab === 'sources');
+  document.getElementById('tabStats').classList.toggle('active', tab === 'stats');
+  document.getElementById('viewModeration').classList.toggle('hidden', tab !== 'moderation');
+  document.getElementById('viewSources').classList.toggle('hidden', tab !== 'sources');
+  document.getElementById('viewStats').classList.toggle('hidden', tab !== 'stats');
+}
+
+document.getElementById('refreshBtn').addEventListener('click', function(){
+  haptic('light');
+  loadData();
+});
+
+// ---------- вход по токену ----------
+function boot(){
+  initTelegram();
+  if (!getToken()) {
+    document.getElementById('gate').classList.remove('hidden');
+    document.getElementById('tokenSave').addEventListener('click', function(){
+      const v = document.getElementById('tokenInput').value.trim();
+      if (!v) return;
+      localStorage.setItem(TOKEN_KEY, v);
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      loadData();
+      loadSources();
+    });
+    return;
+  }
+  document.getElementById('app').classList.remove('hidden');
+  loadData();
+  loadSources();
+}
+
+boot();
+</script>
+</body>
+</html>
