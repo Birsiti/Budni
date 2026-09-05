@@ -401,7 +401,12 @@ async function loadDeck(){
   const wrap = document.getElementById('deckWrap');
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
   const res = await apiPost({ action: 'get_deck' });
-  if (!res.ok) { wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии</div>'; return; }
+  if (!res.ok) {
+    wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии' +
+      (res.error ? '<br><span class="mono" style="font-size:12px;opacity:.7">' + escapeHtml(res.error) + '</span>' : '') +
+      '</div>';
+    return;
+  }
   DECK = res.deck || [];
   DECK_INDEX = 0;
   renderCard();
