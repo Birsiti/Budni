@@ -26,51 +26,62 @@ function renderSources() {
   const approved = STATE.sources.filter(function (s) { return s.status === 'approved'; });
   document.getElementById('srcCount').textContent = pending.length;
 
+  const tgApproved = approved.filter(function (s) { return s.platform !== 'viber'; });
+  const viberApproved = approved.filter(function (s) { return s.platform === 'viber'; });
+
   const addForm =
-    '<div class="section-title">Добавить источник самому</div>' +
-    '<div class="field"><label>Ссылка</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala"></div>' +
+    '<div class="section-title" style="margin-top:0;">Добавить канал для парсинга</div>' +
+    '<div class="field"><label>Ссылка или username</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala"></div>' +
     '<div class="field"><label>Платформа</label>' +
       '<div class="chip-group">' +
         '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
         '<label class="chip"><input type="radio" name="srcNewPlatform" value="viber"><span>Viber</span></label>' +
       '</div>' +
     '</div>' +
-    '<div class="field"><label>Город</label><input type="text" id="srcNewCity" placeholder="например, Слуцк"></div>' +
-    '<button class="btn btn-approve" id="srcAddBtn" style="width:100%; margin-bottom:8px;">+ Добавить</button>';
+    '<div class="field"><label>Город (если канал по одному городу)</label><input type="text" id="srcNewCity" placeholder="например, Слуцк"></div>' +
+    '<button class="btn btn-approve" id="srcAddBtn" style="width:100%; margin-bottom:4px;">+ Добавить в парсинг</button>' +
+    '<p style="color:var(--ink-faint); font-size:12px; margin:4px 0 0;">Подхватится парсером при следующем запуске.</p>';
+
+  function srcRow(s, actions) {
+    const warn = s.platform === 'telegram' && !s.parsed_username
+      ? '<span class="badge badge-viber">ссылка не распознана</span>' : '';
+    const uname = s.parsed_username ? '<span class="src-uname">→ @' + escapeHtml(s.parsed_username) + '</span>' : '';
+    return '<div class="src-row">' +
+      '<div class="src-info"><div class="src-link">' + escapeHtml(s.link) + '</div>' +
+      '<div class="src-meta">' + platformBadge(s.platform) +
+        (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + warn + uname + '</div></div>' +
+      '<div class="src-actions">' + actions + '</div>' +
+    '</div>';
+  }
 
   const pendingHtml = pending.length === 0
-    ? '<div class="empty">Нет предложенных источников на рассмотрении</div>'
+    ? '<div class="empty">Нет предложений от пользователей</div>'
     : pending.map(function (s) {
-        return '<div class="src-row">' +
-          '<div><div class="src-link">' + escapeHtml(s.link) + '</div>' +
-          '<div class="src-meta">' + platformBadge(s.platform) +
-            (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + '</div></div>' +
-          '<div class="src-actions">' +
-            '<button class="icon-btn btn-approve" data-src-approve="' + escapeHtml(s.id) + '">✓</button>' +
-            '<button class="icon-btn btn-reject" data-src-reject="' + escapeHtml(s.id) + '">✕</button>' +
-          '</div>' +
-        '</div>';
+        return srcRow(s,
+          '<button class="icon-btn btn-approve" data-src-approve="' + escapeHtml(s.id) + '">✓</button>' +
+          '<button class="icon-btn btn-reject" data-src-reject="' + escapeHtml(s.id) + '">✕</button>');
       }).join('');
 
-  const approvedHtml = approved.length === 0
-    ? '<div class="empty">Одобренных источников пока нет</div>'
-    : approved.map(function (s) {
-        return '<div class="src-row">' +
-          '<div><div class="src-link">' + escapeHtml(s.link) + '</div>' +
-          '<div class="src-meta">' + platformBadge(s.platform) +
-            (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + '</div></div>' +
-          '<div class="src-actions">' +
-            '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>' +
-          '</div>' +
-        '</div>';
+  const parsedHtml = tgApproved.length === 0
+    ? '<div class="empty">Пока ни одного канала — добавьте выше или запустите seedSourceChannels()</div>'
+    : tgApproved.map(function (s) {
+        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>');
       }).join('');
+
+  const viberHtml = viberApproved.length === 0
+    ? ''
+    : '<div class="section-title">Viber — без парсинга (' + viberApproved.length + ')</div><div class="card">' +
+      viberApproved.map(function (s) {
+        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>');
+      }).join('') + '</div>';
 
   el.innerHTML =
     '<div class="card">' + addForm + '</div>' +
-    '<div class="section-title">На рассмотрении (' + pending.length + ')</div>' +
+    '<div class="section-title">Парсятся сейчас (' + tgApproved.length + ')</div>' +
+    '<div class="card">' + parsedHtml + '</div>' +
+    '<div class="section-title">Предложения пользователей (' + pending.length + ')</div>' +
     '<div class="card">' + pendingHtml + '</div>' +
-    '<div class="section-title">Одобренные — парсятся (' + approved.filter(function (s) { return s.platform !== 'viber'; }).length + ') / Viber без парсинга (' + approved.filter(function (s) { return s.platform === 'viber'; }).length + ')</div>' +
-    '<div class="card">' + approvedHtml + '</div>';
+    viberHtml;
 
   document.getElementById('srcAddBtn').addEventListener('click', async function () {
     const btn = this;
