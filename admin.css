@@ -1,0 +1,126 @@
+/* ============================================================
+   Будни_BY — стили только admin.html (панель модерации Дениса).
+   Общие токены и компоненты — в theme.css (грузится раньше).
+   ============================================================ */
+
+/* ---------- шапка ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 16px 16px; position:relative;
+}
+.topbar h1{ font-size:18px; font-weight:700; margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.topbar-actions{ flex:none; }
+.refresh-btn{
+  min-width:44px; min-height:44px; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid var(--line);
+  color:var(--ink-soft); font-size:18px; display:flex; align-items:center; justify-content:center;
+  flex:none;
+}
+.refresh-btn:active{ background:var(--surface-3); }
+.topbar-actions{ display:flex; align-items:center; gap:8px; }
+.pause-toggle{
+  display:flex; align-items:center; gap:8px;
+  min-height:44px; padding:0 14px; border-radius:999px;
+  border:1px solid var(--line); background:var(--surface-2);
+  font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+  color:var(--ink-soft); white-space:nowrap;
+}
+.pause-toggle .dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none; }
+.pause-toggle:active{ background:var(--surface-3); }
+.pause-toggle.is-paused{ color:var(--danger); border-color:var(--danger-soft); background:var(--danger-soft); }
+.pause-toggle.is-paused .dot{ background:var(--danger); }
+.pause-toggle.is-paused:active{ background:var(--danger-soft); }
+
+/* ---------- вкладки со счётчиками, sticky ---------- */
+.tabs{
+  padding:0 16px 16px; position:sticky; top:0; z-index:5; background:var(--bg);
+}
+.tab{ font-size:14px; }
+.tab .count{
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  background:var(--surface-3); border-radius:20px; padding:1px 7px;
+}
+.tab.active .count{ background:var(--accent); color:#fff; }
+
+/* ---------- карточка / панель-контейнер ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px;
+}
+.card-top{ display:flex; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.card-position{ font-weight:600; font-size:15px; }
+.card-sector{
+  font-size:11px; color:var(--ink-soft); background:var(--surface-2);
+  border-radius:20px; padding:2px 8px; white-space:nowrap; flex:none;
+}
+.card-meta{ color:var(--ink-soft); font-size:13px; margin-bottom:8px; }
+.card-reason{
+  background:var(--danger-soft); color:var(--danger); border-radius:var(--radius-sm);
+  padding:8px 10px; font-size:13px; margin-bottom:10px;
+}
+.card-text{
+  color:var(--ink-soft); font-size:13px; white-space:pre-line;
+  max-height:0; overflow:hidden; transition:max-height .2s;
+}
+.card-text.open{ max-height:400px; margin-bottom:10px; }
+.card-toggle{
+  color:var(--accent); font-size:13px; background:none; border:none; padding:0 0 10px; text-align:left;
+}
+.card-actions{ display:flex; gap:8px; }
+.btn{
+  flex:1; min-height:44px; border-radius:var(--radius-sm); border:none;
+  font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:14px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-approve{ background:var(--ok-soft); color:var(--ok); }
+.btn-approve:active{ background:var(--ok); color:#fff; }
+.btn-reject{ background:var(--danger-soft); color:var(--danger); }
+.btn-reject:active{ background:var(--danger); color:#fff; }
+.btn[disabled]{ opacity:.5; }
+
+/* ---------- статистика ---------- */
+.stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.stat-tile{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px;
+}
+.stat-value{ font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:600; }
+.stat-label{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+
+.sector-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
+}
+.sector-row:last-child{ border-bottom:none; }
+.sector-count{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); }
+
+/* ---------- экран токена ---------- */
+.gate{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:24px; gap:12px;
+}
+.gate h1{ font-size:20px; margin:0 0 4px; }
+.gate p{ color:var(--ink-soft); font-size:13px; margin:0 0 12px; }
+.gate input{
+  min-height:44px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); padding:0 12px; font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+}
+.gate .btn{ background:var(--accent); color:#fff; }
+.gate .btn:active{ background:var(--accent-dark); }
+
+/* ---------- источники ---------- */
+.field > label{ font-size:11px; }
+.badge-viber{ background:var(--danger-soft); color:var(--danger); }
+.src-row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 0; border-bottom:1px solid var(--line);
+}
+.src-row:last-child{ border-bottom:none; }
+.src-link{ font-size:13px; word-break:break-all; }
+.src-meta{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:2px; }
+.src-actions{ display:flex; gap:6px; flex:none; }
+.icon-btn{
+  min-width:36px; min-height:36px; border-radius:var(--radius-sm); border:none;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
