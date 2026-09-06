@@ -136,3 +136,44 @@ function formatPhoneTail(value) {
   if (d.length !== 9) return '';
   return d.slice(0, 2) + '-' + d.slice(2, 5) + '-' + d.slice(5, 7) + '-' + d.slice(7);
 }
+
+// tel:-ссылка из телефона (для «позвонить» по тапу)
+function telHref(phone) {
+  const d = String(phone || '').replace(/[^\d+]/g, '');
+  if (d.replace(/\D/g, '').length < 6) return '';
+  return d[0] === '+' ? d : '+' + d;
+}
+
+// ---------- дата рождения / возраст ----------
+var RU_MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+function ageFromISO(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const b = new Date(+m[1], +m[2] - 1, +m[3]);
+  const n = new Date();
+  let a = n.getFullYear() - b.getFullYear();
+  if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+  return (a >= 14 && a <= 80) ? a : null;
+}
+
+function plYears(n) {
+  const d10 = n % 10, d100 = n % 100;
+  if (d10 === 1 && d100 !== 11) return n + ' год';
+  if (d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14)) return n + ' года';
+  return n + ' лет';
+}
+
+function fmtBirth(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (+m[3]) + ' ' + RU_MONTHS_GEN[+m[2] - 1] + ' ' + m[1] : '';
+}
+
+// поделиться текстом через штатный share-лист Telegram
+function shareText(text) {
+  const url = 'https://t.me/share/url?url=' + encodeURIComponent('https://t.me/Budni_BY_Bot') +
+    '&text=' + encodeURIComponent(String(text || '').slice(0, 3500));
+  if (tg && tg.openTelegramLink) { try { tg.openTelegramLink(url); return; } catch (e) {} }
+  window.open(url, '_blank');
+}

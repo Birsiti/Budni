@@ -29,7 +29,12 @@
 <div class="topbar">
   <div class="topbar-head">
     <h1>Будни_BY</h1>
-    <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">☀️</button>
+    <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+      </svg>
+    </button>
   </div>
   <div class="tabs">
     <button class="tab active" data-tab="deck">Вакансии</button>
@@ -43,6 +48,11 @@
 <div class="content">
 
   <div id="viewDeck">
+    <div class="deck-nudge hidden" id="deckNudge">
+      <span class="deck-nudge-t">Заполните анкету — подстроим ленту под вас</span>
+      <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
+      <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
+    </div>
     <div class="filter-bar">
       <button class="filter-toggle" id="filterToggle">
         <span>⚙ Фильтр</span><span class="summary" id="filterSummary"></span>

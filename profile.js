@@ -17,12 +17,33 @@ var DISMISS_KEY = 'budni_anketa_dismissed';
 
 var profileExists = false;
 var wizStep = 1;
-var WIZ = { name: '', phone: '', city: '', sectors: [], employment: 'Любая', about: '', publish: false };
+var WIZ = { name: '', birth: '', phone: '', city: '', sectors: [], employment: 'Любая', about: '', publish: false };
+
+function birthBound(yearsAgo) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - yearsAgo);
+  return d.toISOString().slice(0, 10);
+}
+function updateAgeHint() {
+  const el = document.getElementById('wAgeHint');
+  const bi = document.getElementById('wBirth');
+  if (!el || !bi) return;
+  const a = ageFromISO(bi.value);
+  el.textContent = a ? plYears(a) : '';
+}
+
+var NUDGE_KEY = 'budni_nudge_hidden';
 
 function initProfile() {
   document.getElementById('profileStartBtn').addEventListener('click', function () { openWizard(); });
   document.getElementById('wizNav').addEventListener('click', wizardBack);
   document.getElementById('wizNext').addEventListener('click', wizardNext);
+  document.getElementById('deckNudgeGo').addEventListener('click', function () { openWizard(); });
+  document.getElementById('deckNudgeX').addEventListener('click', function () {
+    try { localStorage.setItem(NUDGE_KEY, '1'); } catch (e) {}
+    document.getElementById('deckNudge').classList.add('hidden');
+    haptic('light');
+  });
 }
 
 // ---------- мастер ----------
@@ -84,12 +105,20 @@ function renderWizardStep() {
       '<h2>Как вас зовут?</h2>' +
       '<p class="wsub">Имя увидит работодатель, если вы опубликуете анкету.</p>' +
       '<div class="field"><label>Имя</label><input type="text" id="wName" placeholder="как к вам обращаться"></div>' +
-      '<div class="field"><label>Телефон</label>' +
+      '<div class="field"><label>Дата рождения <span class="lbl-soft">· необязательно</span></label>' +
+        '<input type="date" id="wBirth" max="' + birthBound(14) + '" min="' + birthBound(80) + '">' +
+        '<p class="hint" id="wAgeHint" style="color:var(--ink-soft)"></p></div>' +
+      '<div class="field"><label>Телефон <span class="lbl-soft">· необязательно</span></label>' +
         '<div class="phone-field"><span class="phone-prefix">+375</span>' +
-        '<input type="tel" class="phone-input" id="wPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12"></div></div>' +
+        '<input type="tel" class="phone-input" id="wPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12"></div>' +
+        '<p class="profile-note">Нужен, только если хотите публиковать анкету в группе. Для отклика на чужую вакансию — не обязателен.</p></div>' +
       '<div class="field"><label>Город</label><input type="text" id="wCity" placeholder="например, Минск"></div>';
     document.getElementById('wName').value = WIZ.name;
     document.getElementById('wCity').value = WIZ.city;
+    const bi = document.getElementById('wBirth');
+    bi.value = WIZ.birth || '';
+    bi.addEventListener('change', function () { WIZ.birth = bi.value; updateAgeHint(); });
+    updateAgeHint();
     const ph = document.getElementById('wPhone');
     ph.value = formatPhoneTail(WIZ.phone) || '';
     bindPhoneMask(ph);
@@ -129,12 +158,13 @@ function collectStep(validate) {
     const el = document.getElementById('wName');
     if (!el) return true;
     WIZ.name = el.value.trim();
+    WIZ.birth = document.getElementById('wBirth').value || '';
     const digits = document.getElementById('wPhone').value.replace(/\D/g, '');
     WIZ.phone = digits ? '+375' + digits : '';
     WIZ.city = document.getElementById('wCity').value.trim();
     if (validate) {
       if (!WIZ.name) { alertAsync('Как к вам обращаться?'); return false; }
-      if (digits.length !== 9) { alertAsync('Проверьте номер телефона'); return false; }
+      if (digits.length > 0 && digits.length !== 9) { alertAsync('Проверьте номер телефона или оставьте поле пустым'); return false; }
     }
   } else if (wizStep === 2) {
     const grid = document.getElementById('wSectors');
@@ -162,7 +192,7 @@ async function finishWizard() {
   const res = await apiPost({
     action: 'save_profile',
     telegramId: telegramUser.id, username: telegramUser.username || '',
-    name: WIZ.name, phone: WIZ.phone, city: WIZ.city,
+    name: WIZ.name, birth: WIZ.birth, phone: WIZ.phone, city: WIZ.city,
     sectors: WIZ.sectors, employment: WIZ.employment,
     about: WIZ.about, publish: WIZ.publish,
   }).catch(function () { return { ok: false }; });
@@ -197,6 +227,11 @@ function renderProfileView() {
   const cta = document.getElementById('profileCTA');
   const sum = document.getElementById('profileSummary');
   const dot = document.getElementById('profileDot');
+  const nudge = document.getElementById('deckNudge');
+
+  let nudgeHidden = false;
+  try { nudgeHidden = !!localStorage.getItem(NUDGE_KEY); } catch (e) {}
+  if (nudge) nudge.classList.toggle('hidden', profileExists || nudgeHidden);
 
   if (!profileExists) {
     cta.classList.remove('hidden');
@@ -209,10 +244,12 @@ function renderProfileView() {
   sum.classList.remove('hidden');
 
   const sectorsLine = WIZ.sectors.length ? WIZ.sectors.join(', ') : '—';
+  const ageA = ageFromISO(WIZ.birth);
+  const ageLine = ageA ? plYears(ageA) : '';
   sum.innerHTML =
     '<div class="psum">' +
       '<div class="psum-name">' + escapeHtml(WIZ.name || 'Анкета') + '</div>' +
-      '<div class="psum-row">' + escapeHtml([WIZ.city, WIZ.employment].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="psum-row">' + escapeHtml([WIZ.city, ageLine, WIZ.employment].filter(Boolean).join(' · ')) + '</div>' +
       '<div class="psum-row">🧭 ' + escapeHtml(sectorsLine) + '</div>' +
       (WIZ.about ? '<div class="psum-row">' + escapeHtml(WIZ.about) + '</div>' : '') +
       '<div class="psum-pub' + (WIZ.publish ? '' : ' off') + '">' +
@@ -234,7 +271,7 @@ async function togglePublish() {
   const res = await apiPost({
     action: 'save_profile',
     telegramId: telegramUser.id, username: telegramUser.username || '',
-    name: WIZ.name, phone: WIZ.phone, city: WIZ.city,
+    name: WIZ.name, birth: WIZ.birth, phone: WIZ.phone, city: WIZ.city,
     sectors: WIZ.sectors, employment: WIZ.employment,
     about: WIZ.about, publish: !WIZ.publish,
   }).catch(function () { return { ok: false }; });
@@ -259,6 +296,7 @@ async function loadProfile() {
 
   if (p) {
     WIZ.name = p.name || '';
+    WIZ.birth = p.birth || '';
     WIZ.phone = p.phone ? ('+' + String(p.phone).replace(/^\+/, '')) : '';
     WIZ.city = p.city || '';
     WIZ.sectors = Array.isArray(p.sectors) ? p.sectors : [];
@@ -267,11 +305,7 @@ async function loadProfile() {
     WIZ.publish = !!p.published;
   }
   renderProfileView();
-
-  // первый вход, анкеты нет и её ещё не закрывали — открываем мастер сразу
-  if (!p) {
-    let dismissed = false;
-    try { dismissed = !!localStorage.getItem(DISMISS_KEY); } catch (e) {}
-    if (!dismissed) openWizard();
-  }
+  // мастер НЕ открываем сам — лента вакансий показывается сразу, без оверлея
+  // поверх шапки. Заполнить анкету — кнопкой на вкладке «Анкета» (там же точка-
+  // индикатор, пока не заполнено) или строкой-подсказкой над лентой.
 }

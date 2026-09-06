@@ -126,7 +126,9 @@ function renderCard() {
       (v.company ? '<div class="card-company">' + escapeHtml(v.company) + '</div>' : '') +
       '<div class="card-body">' + escapeHtml(v.clean_text || '') + '</div>' +
       '<div class="card-contact" id="cardContact">' +
-        '<div>📞 ' + escapeHtml(v.phone || 'контакт в тексте выше') + '</div>' +
+        (telHref(v.phone)
+          ? '<a href="tel:' + escapeHtml(telHref(v.phone)) + '">📞 ' + escapeHtml(v.phone) + ' — позвонить</a>'
+          : '<div>📞 ' + escapeHtml(v.phone || 'контакт в тексте выше') + '</div>') +
       '</div>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
