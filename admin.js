@@ -23,7 +23,8 @@ async function apiPost(payload) {
 }
 
 // ---------- состояние ----------
-var STATE = { suspicious: [], stats: null, sources: [], loading: false, paused: false };
+var STATE = { suspicious: [], stats: null, sources: [], queue: [], swipes: null,
+  loading: false, paused: false, publishBatch: 1, publishDailyLimit: 0 };
 
 async function loadData() {
   if (STATE.loading) return;
@@ -37,10 +38,13 @@ async function loadData() {
   STATE.suspicious = res.suspicious || [];
   STATE.stats = res.stats;
   STATE.paused = !!res.paused;
+  STATE.publishBatch = res.publishBatch || 1;
+  STATE.publishDailyLimit = res.publishDailyLimit || 0;
   renderModeration();
   renderStats();
   renderPauseToggle();
   document.getElementById('modCount').textContent = STATE.suspicious.length;
+  document.getElementById('queueCount').textContent = (STATE.stats && STATE.stats.queueLength) || 0;
 }
 
 // ---------- стоп-кран публикации ----------
@@ -65,21 +69,27 @@ function initPauseToggle() {
 }
 
 // ---------- вкладки ----------
+var TABS = ['moderation', 'queue', 'sources', 'stats'];
+
 function switchTab(tab) {
   haptic('light');
-  document.getElementById('tabModeration').classList.toggle('active', tab === 'moderation');
-  document.getElementById('tabSources').classList.toggle('active', tab === 'sources');
-  document.getElementById('tabStats').classList.toggle('active', tab === 'stats');
-  document.getElementById('viewModeration').classList.toggle('hidden', tab !== 'moderation');
-  document.getElementById('viewSources').classList.toggle('hidden', tab !== 'sources');
-  document.getElementById('viewStats').classList.toggle('hidden', tab !== 'stats');
+  TABS.forEach(function (t) {
+    const cap = t.charAt(0).toUpperCase() + t.slice(1);
+    document.getElementById('tab' + cap).classList.toggle('active', t === tab);
+    document.getElementById('view' + cap).classList.toggle('hidden', t !== tab);
+  });
 }
 
 function initTabs() {
   document.getElementById('tabModeration').addEventListener('click', function () { switchTab('moderation'); });
+  document.getElementById('tabQueue').addEventListener('click', function () { switchTab('queue'); loadQueue(); });
   document.getElementById('tabSources').addEventListener('click', function () { switchTab('sources'); loadSources(); });
-  document.getElementById('tabStats').addEventListener('click', function () { switchTab('stats'); });
-  document.getElementById('refreshBtn').addEventListener('click', function () { haptic('light'); loadData(); });
+  document.getElementById('tabStats').addEventListener('click', function () { switchTab('stats'); loadSwipeStats(); });
+  document.getElementById('refreshBtn').addEventListener('click', function () {
+    haptic('light');
+    loadData();
+    if (!document.getElementById('viewQueue').classList.contains('hidden')) loadQueue();
+  });
 }
 
 // ---------- вход по токену ----------

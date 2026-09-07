@@ -55,6 +55,9 @@
     <button class="tab active" id="tabModeration" data-tab="moderation">
       Модерация <span class="count" id="modCount">0</span>
     </button>
+    <button class="tab" id="tabQueue" data-tab="queue">
+      Очередь <span class="count" id="queueCount">0</span>
+    </button>
     <button class="tab" id="tabSources" data-tab="sources">
       Источники <span class="count" id="srcCount">0</span>
     </button>
@@ -63,6 +66,7 @@
 
   <div class="content">
     <div id="viewModeration"></div>
+    <div id="viewQueue" class="hidden"></div>
     <div id="viewSources" class="hidden"></div>
     <div id="viewStats" class="hidden"></div>
   </div>
@@ -72,6 +76,7 @@
 <script src="settings.js"></script>
 <script src="admin.js"></script>
 <script src="admin-moderation.js"></script>
+<script src="admin-queue.js"></script>
 <script src="admin-sources.js"></script>
 <script src="admin-stats.js"></script>
 <script>boot();</script>

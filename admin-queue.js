@@ -1,0 +1,132 @@
+// ============================================================
+// Будни_BY admin — вкладка «Очередь»: что вот-вот опубликуется.
+// Действия: убрать / вверх / опубликовать сейчас / сменить сферу /
+// поправить текст / забанить канал-источник.
+// Глобалы: STATE, apiPost (admin.js), escapeHtml, haptic, confirmAsync, alertAsync,
+//   loadData, SECTORS (app.js).
+// ============================================================
+
+async function loadQueue() {
+  const el = document.getElementById('viewQueue');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiPost({ action: 'get_queue', limit: 80 });
+  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  STATE.queue = res.queue || [];
+  STATE.queueSectors = res.sectors || SECTORS.map(function (s) { return s[0]; });
+  renderQueue();
+}
+
+function renderQueue() {
+  const el = document.getElementById('viewQueue');
+  const q = STATE.queue;
+  document.getElementById('queueCount').textContent = (STATE.stats && STATE.stats.queueLength) || q.length;
+
+  if (q.length === 0) {
+    el.innerHTML = '<div class="empty">Очередь пуста</div>';
+    return;
+  }
+
+  el.innerHTML =
+    '<p class="rate-note" style="margin:0 0 12px;">Порядок сверху вниз — так и публикуется (по кругу из разных сфер). Показаны первые ' + q.length + '.</p>' +
+    q.map(function (v, i) {
+      if (v.missing) {
+        return '<div class="qcard"><div class="qtop"><div class="qpos">— вакансия удалена из базы —</div>' +
+          '<button class="icon-btn btn-reject" data-q-remove="' + escapeHtml(v.id) + '">✕</button></div>' +
+          '<div class="qmeta">' + escapeHtml(v.sector) + '</div></div>';
+      }
+      const meta = [v.company, v.city, v.salary_text].filter(Boolean).join(' · ');
+      return '<div class="qcard" data-i="' + i + '">' +
+        '<div class="qtop">' +
+          '<div><div class="qpos">' + (i + 1) + '. ' + escapeHtml(v.position || '(без должности)') + '</div>' +
+          (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') + '</div>' +
+          (v.suspicious ? '<span class="badge badge-viber">⚠️</span>' : '') +
+        '</div>' +
+        '<div class="qmeta2">' +
+          '<span class="badge">' + escapeHtml(v.sector) + '</span>' +
+          (v.channel ? '<span class="badge">' + escapeHtml(v.channel) + '</span>' : '') +
+          (v.source === 'employer' ? '<span class="badge badge-employer">прямая</span>' : '') +
+        '</div>' +
+        '<button class="qtoggle" data-q-toggle="' + i + '">текст / сфера ▾</button>' +
+        '<div class="qdetail" id="qd-' + i + '">' +
+          '<textarea class="qtext" id="qt-' + i + '">' + escapeHtml(v.clean_text || '') + '</textarea>' +
+          '<div class="qrow">' +
+            '<select class="qsel" id="qs-' + i + '">' +
+              STATE.queueSectors.map(function (s) {
+                return '<option' + (s === v.sector ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
+              }).join('') +
+            '</select>' +
+            '<button class="qbtn" data-q-save="' + i + '">Сохранить</button>' +
+          '</div>' +
+          (v.channel ? '<button class="qbtn danger" data-q-ban="' + escapeHtml(v.channel) + '">Забанить канал ' + escapeHtml(v.channel) + '</button>' : '') +
+        '</div>' +
+        '<div class="qactions">' +
+          '<button class="qbtn" data-q-bump="' + escapeHtml(v.id) + '">▲ вверх</button>' +
+          '<button class="qbtn ok" data-q-now="' + i + '">➤ сейчас</button>' +
+          '<button class="qbtn danger" data-q-remove="' + escapeHtml(v.id) + '">✕ убрать</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+  bindQueue(el);
+}
+
+function bindQueue(el) {
+  el.querySelectorAll('[data-q-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('qd-' + b.getAttribute('data-q-toggle')).classList.toggle('open');
+      haptic('light');
+    });
+  });
+  el.querySelectorAll('[data-q-remove]').forEach(function (b) {
+    b.addEventListener('click', function () { qAction(b, { action: 'queue_remove', id: b.getAttribute('data-q-remove') }); });
+  });
+  el.querySelectorAll('[data-q-bump]').forEach(function (b) {
+    b.addEventListener('click', function () { qAction(b, { action: 'queue_bump', id: b.getAttribute('data-q-bump') }); });
+  });
+  el.querySelectorAll('[data-q-now]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const v = STATE.queue[+b.getAttribute('data-q-now')];
+      if (!v) return;
+      if (!(await confirmAsync('Опубликовать «' + (v.position || '') + '» в группу сейчас?'))) return;
+      qAction(b, { action: 'queue_publish_now', id: v.id, sector: v.sector });
+    });
+  });
+  el.querySelectorAll('[data-q-save]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const i = +b.getAttribute('data-q-save');
+      const v = STATE.queue[i];
+      if (!v) return;
+      const newText = document.getElementById('qt-' + i).value;
+      const newSector = document.getElementById('qs-' + i).value;
+      b.disabled = true; b.textContent = '…';
+      let ok = true;
+      if (newText !== (v.clean_text || '')) {
+        const r = await apiPost({ action: 'queue_edit_text', id: v.id, sector: v.sector, text: newText });
+        ok = ok && r.ok;
+      }
+      if (newSector !== v.sector) {
+        const r = await apiPost({ action: 'queue_set_sector', id: v.id, fromSector: v.sector, toSector: newSector });
+        ok = ok && r.ok;
+      }
+      if (ok) { haptic('success'); loadQueue(); }
+      else { haptic('error'); b.disabled = false; b.textContent = 'Сохранить'; await alertAsync('Не всё сохранилось'); }
+    });
+  });
+  el.querySelectorAll('[data-q-ban]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const ch = b.getAttribute('data-q-ban');
+      if (!(await confirmAsync('Забанить канал ' + ch + '? Он снимется с парсинга, все его вакансии уйдут из очереди.'))) return;
+      b.disabled = true;
+      const r = await apiPost({ action: 'ban_source', channel: ch });
+      if (r.ok) { haptic('success'); await alertAsync('Готово: источник отклонён, из очереди убрано ' + (r.removed || 0)); loadQueue(); loadData(); }
+      else { haptic('error'); b.disabled = false; await alertAsync('Не получилось: ' + (r.error || '')); }
+    });
+  });
+}
+
+async function qAction(btn, payload) {
+  btn.disabled = true;
+  const res = await apiPost(payload);
+  if (res.ok) { haptic('success'); loadQueue(); loadData(); }
+  else { haptic('error'); btn.disabled = false; await alertAsync('Не получилось: ' + (res.error || '')); }
+}

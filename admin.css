@@ -33,12 +33,12 @@
 
 /* ---------- вкладки со счётчиками, sticky ---------- */
 .tabs{
-  padding:0 16px 16px; position:sticky; top:0; z-index:5; background:var(--bg);
+  padding:0 16px 16px; gap:4px; position:sticky; top:0; z-index:5; background:var(--bg);
 }
-.tab{ font-size:14px; }
+.tab{ font-size:12px; padding:0 4px; }
 .tab .count{
-  font-family:'JetBrains Mono',monospace; font-size:12px;
-  background:var(--surface-3); border-radius:20px; padding:1px 7px;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  background:var(--surface-3); border-radius:20px; padding:1px 6px;
 }
 .tab.active .count{ background:var(--accent); color:#fff; }
 
@@ -88,11 +88,60 @@
 .stat-label{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
 
 .sector-row{
-  display:flex; justify-content:space-between; align-items:center;
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
   padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
 }
 .sector-row:last-child{ border-bottom:none; }
-.sector-count{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); }
+.sector-count{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); white-space:nowrap; flex:none; }
+.sector-count .dim{ color:var(--ink-faint); }
+.sector-head{ font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.02em; padding:4px 0; }
+.sector-head .sector-count{ font-family:'Chakra Petch',sans-serif; }
+.sector-total{ font-weight:700; border-top:2px solid var(--line-strong); }
+.sector-total .sector-count{ color:var(--ink); }
+
+/* ---------- вкладка «Очередь» ---------- */
+.qcard{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 14px; margin-bottom:10px;
+}
+.qtop{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.qpos{ font-weight:600; font-size:14px; }
+.qmeta{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+.qmeta2{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.qtoggle{ color:var(--accent); font-size:12px; background:none; border:none; padding:8px 0 0; }
+.qdetail{ max-height:0; overflow:hidden; transition:max-height .2s; }
+.qdetail.open{ max-height:600px; margin-top:8px; }
+.qtext{
+  width:100%; min-height:120px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); padding:8px 10px; font-family:'Inter',sans-serif;
+  font-size:13px; line-height:1.4; resize:vertical;
+}
+.qrow{ display:flex; gap:6px; margin-top:8px; }
+.qsel{
+  flex:1; min-height:38px; border-radius:var(--radius-sm); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink); font-size:13px; padding:0 8px;
+}
+.qactions{ display:flex; gap:6px; margin-top:10px; }
+.qbtn{
+  flex:1; min-height:38px; border:none; border-radius:var(--radius-sm);
+  background:var(--surface-2); color:var(--ink-soft);
+  font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:12px;
+}
+.qbtn.ok{ background:var(--ok-soft); color:var(--ok); }
+.qbtn.danger{ background:var(--danger-soft); color:var(--danger); }
+.qbtn[disabled]{ opacity:.5; }
+.qdetail .qbtn{ flex:none; width:100%; margin-top:8px; min-height:40px; }
+
+/* темп публикации */
+.rate-note{ margin:0 0 12px; color:var(--ink-soft); font-size:13px; line-height:1.4; }
+.rate-row{ display:flex; gap:6px; }
+.rate-opt{
+  flex:1; min-height:44px; border:1px solid var(--line); border-radius:var(--radius-sm);
+  background:var(--surface-2); color:var(--ink-soft);
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;
+}
+.rate-opt.is-on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.rate-opt[disabled]{ opacity:.5; }
 
 /* ---------- экран токена ---------- */
 .gate{
