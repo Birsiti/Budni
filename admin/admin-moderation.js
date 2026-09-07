@@ -1,11 +1,28 @@
+// изменено 2026-09-07 11:03
 // ============================================================
-// Будни_BY admin — вкладка «Модерация»: подозрительные вакансии,
-// одобрить (в очередь публикации) / отклонить.
-// Глобалы: STATE, apiPost (admin.js), haptic, escapeHtml, confirmAsync, alertAsync.
+// Будни_BY admin — страница «Модерация» (admin-moderation.html):
+// подозрительные вакансии, одобрить (в очередь) / отклонить.
+// Рендерит в #view. Глобалы: STATE, apiGet, apiPost, haptic, escapeHtml,
+// confirmAsync, alertAsync (app.js / admin-core.js).
 // ============================================================
 
+async function loadModeration() {
+  const el = document.getElementById('view');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiGet('admin_data');
+  if (!res.ok) { el.innerHTML = '<div class="empty">Ошибка: ' + escapeHtml(res.error || '') + '</div>'; return; }
+  STATE.suspicious = res.suspicious || [];
+  renderModeration();
+}
+
+function setModCount() {
+  const c = document.getElementById('pageCount');
+  if (c) c.textContent = STATE.suspicious.length;
+}
+
 function renderModeration() {
-  const el = document.getElementById('viewModeration');
+  const el = document.getElementById('view');
+  setModCount();
   if (STATE.suspicious.length === 0) {
     el.innerHTML = '<div class="empty">Нет вакансий на проверке 👍</div>';
     return;
@@ -30,8 +47,7 @@ function renderModeration() {
 
   el.querySelectorAll('[data-toggle]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const idx = btn.getAttribute('data-toggle');
-      document.getElementById('text-' + idx).classList.toggle('open');
+      document.getElementById('text-' + btn.getAttribute('data-toggle')).classList.toggle('open');
       haptic('light');
     });
   });
@@ -48,24 +64,20 @@ async function handleDecision(btn, kind) {
   const item = STATE.suspicious[idx];
   if (!item) return;
 
-  const question = kind === 'approve'
-    ? 'Одобрить и поставить в очередь публикации?'
-    : 'Отклонить эту вакансию?';
-  const ok = await confirmAsync(question);
+  const ok = await confirmAsync(kind === 'approve'
+    ? 'Одобрить и поставить в очередь публикации?' : 'Отклонить эту вакансию?');
   if (!ok) return;
 
   const card = btn.closest('.card');
   card.querySelectorAll('.btn').forEach(function (b) { b.setAttribute('disabled', 'true'); });
   btn.innerHTML = '<span class="spinner"></span>';
 
-  const action = kind === 'approve' ? 'approve_vacancy' : 'reject_vacancy';
-  const res = await apiPost({ action: action, id: item.id, sector: item.sector });
+  const res = await apiPost({ action: kind === 'approve' ? 'approve_vacancy' : 'reject_vacancy', id: item.id, sector: item.sector });
 
   if (res.ok) {
     haptic('success');
     STATE.suspicious.splice(idx, 1);
     renderModeration();
-    document.getElementById('modCount').textContent = STATE.suspicious.length;
   } else {
     haptic('error');
     await alertAsync('Не получилось: ' + (res.error || 'неизвестная ошибка'));

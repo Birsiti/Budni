@@ -1,33 +1,31 @@
+// изменено 2026-09-07 11:03
 // ============================================================
-// Будни_BY admin — вкладка «Очередь»: что вот-вот опубликуется.
-// Действия: убрать / вверх / опубликовать сейчас / сменить сферу /
-// поправить текст / забанить канал-источник.
-// Глобалы: STATE, apiPost (admin.js), escapeHtml, haptic, confirmAsync, alertAsync,
-//   loadData, SECTORS (app.js).
+// Будни_BY admin — страница «Очередь» (admin-queue.html): что вот-вот
+// опубликуется. Убрать / вверх / опубликовать сейчас / сменить сферу /
+// поправить текст / забанить канал-источник. Рендерит в #view.
+// Глобалы: STATE, apiPost, escapeHtml, haptic, confirmAsync, alertAsync, SECTORS.
 // ============================================================
 
 async function loadQueue() {
-  const el = document.getElementById('viewQueue');
+  const el = document.getElementById('view');
   el.innerHTML = '<div class="empty">Загрузка…</div>';
   const res = await apiPost({ action: 'get_queue', limit: 80 });
-  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось: ' + escapeHtml(res.error || '') + '</div>'; return; }
   STATE.queue = res.queue || [];
   STATE.queueSectors = res.sectors || SECTORS.map(function (s) { return s[0]; });
   renderQueue();
 }
 
 function renderQueue() {
-  const el = document.getElementById('viewQueue');
+  const el = document.getElementById('view');
   const q = STATE.queue;
-  document.getElementById('queueCount').textContent = (STATE.stats && STATE.stats.queueLength) || q.length;
+  const c = document.getElementById('pageCount');
+  if (c) c.textContent = q.length;
 
-  if (q.length === 0) {
-    el.innerHTML = '<div class="empty">Очередь пуста</div>';
-    return;
-  }
+  if (q.length === 0) { el.innerHTML = '<div class="empty">Очередь пуста</div>'; return; }
 
   el.innerHTML =
-    '<p class="rate-note" style="margin:0 0 12px;">Порядок сверху вниз — так и публикуется (по кругу из разных сфер). Показаны первые ' + q.length + '.</p>' +
+    '<p class="rate-note" style="margin:0 0 12px;">Порядок сверху вниз — так и публикуется (по кругу из разных сфер). Первые ' + q.length + '.</p>' +
     q.map(function (v, i) {
       if (v.missing) {
         return '<div class="qcard"><div class="qtop"><div class="qpos">— вакансия удалена из базы —</div>' +
@@ -118,7 +116,7 @@ function bindQueue(el) {
       if (!(await confirmAsync('Забанить канал ' + ch + '? Он снимется с парсинга, все его вакансии уйдут из очереди.'))) return;
       b.disabled = true;
       const r = await apiPost({ action: 'ban_source', channel: ch });
-      if (r.ok) { haptic('success'); await alertAsync('Готово: источник отклонён, из очереди убрано ' + (r.removed || 0)); loadQueue(); loadData(); }
+      if (r.ok) { haptic('success'); await alertAsync('Готово: из очереди убрано ' + (r.removed || 0)); loadQueue(); }
       else { haptic('error'); b.disabled = false; await alertAsync('Не получилось: ' + (r.error || '')); }
     });
   });
@@ -127,6 +125,6 @@ function bindQueue(el) {
 async function qAction(btn, payload) {
   btn.disabled = true;
   const res = await apiPost(payload);
-  if (res.ok) { haptic('success'); loadQueue(); loadData(); }
+  if (res.ok) { haptic('success'); loadQueue(); }
   else { haptic('error'); btn.disabled = false; await alertAsync('Не получилось: ' + (res.error || '')); }
 }

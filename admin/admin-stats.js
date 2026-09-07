@@ -1,10 +1,24 @@
+// изменено 2026-09-07 11:03
 // ============================================================
-// Будни_BY admin — вкладка «Статистика»: темп публикации + очередь/опубл./всего
-// по сферам + разбивки по каналам/городам. Данные — в STATE.stats из admin_data.
-// Глобалы: STATE, apiPost (admin.js), escapeHtml, haptic, alertAsync, loadData.
+// Будни_BY admin — страница «Статистика» (admin-stats.html): темп публикации,
+// дневной лимит, «залить бэклог», очередь/опубл./всего по сферам, каналы,
+// города, свайп-аналитика. Рендерит в #view.
+// Глобалы: STATE, apiGet, apiPost, escapeHtml, haptic, alertAsync, confirmAsync.
 // ============================================================
 
 var RATE_OPTIONS = [1, 2, 3, 5, 8, 12];
+
+async function loadStats() {
+  const el = document.getElementById('view');
+  el.innerHTML = '<div class="empty">Загрузка…</div>';
+  const res = await apiGet('admin_data');
+  if (!res.ok) { el.innerHTML = '<div class="empty">Ошибка: ' + escapeHtml(res.error || '') + '</div>'; return; }
+  STATE.stats = res.stats;
+  STATE.publishBatch = res.publishBatch || 1;
+  STATE.publishDailyLimit = res.publishDailyLimit || 0;
+  renderStats();
+  loadSwipeStats(); // фоном, отдельным запросом
+}
 
 function renderBreakdown(obj, limit) {
   const keys = Object.keys(obj || {}).sort(function (a, b) { return obj[b] - obj[a]; });
@@ -61,8 +75,8 @@ function renderRateControl() {
 }
 
 function renderStats() {
-  const el = document.getElementById('viewStats');
-  if (!STATE.stats) { el.innerHTML = ''; return; }
+  const el = document.getElementById('view');
+  if (!STATE.stats) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
   const s = STATE.stats;
 
   el.innerHTML =
@@ -92,7 +106,7 @@ function renderStats() {
     if (!(await confirmAsync('Добавить в очередь ВСЕ активные вакансии, которых там ещё нет? Публиковаться будут по текущему темпу.'))) return;
     btn.disabled = true; btn.textContent = 'Заливаю…';
     const res = await apiPost({ action: 'enqueue_all_backlog' });
-    if (res.ok) { haptic('success'); await alertAsync('Добавлено в очередь: ' + (res.added || 0)); loadData(); }
+    if (res.ok) { haptic('success'); await alertAsync('Добавлено в очередь: ' + (res.added || 0)); loadStats(); }
     else { haptic('error'); btn.disabled = false; btn.textContent = 'Залить весь бэклог в очередь'; await alertAsync('Не получилось: ' + (res.error || '')); }
   });
 

@@ -1,7 +1,36 @@
+/* изменено 2026-09-07 11:03 */
 /* ============================================================
-   Будни_BY — стили только admin.html (панель модерации Дениса).
+   Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
+
+/* ---------- хаб (admin.html) ---------- */
+.hub-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.hub-tile{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 14px; text-decoration:none; color:inherit; display:block;
+}
+.hub-tile:active{ background:var(--surface-2); }
+.hub-n{ font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:600; color:var(--ink); }
+.hub-l{ color:var(--ink-soft); font-size:13px; margin-top:2px; }
+.hub-line{ color:var(--ink-soft); font-size:12px; line-height:1.5; }
+.pause-toggle.wide{ width:100%; justify-content:center; margin-bottom:16px; }
+
+/* ---------- шапка подстраницы ---------- */
+.subbar{
+  display:flex; align-items:center; gap:10px; padding:8px 16px 14px;
+  position:sticky; top:0; z-index:20; background:var(--bg);
+}
+.subbar .back{
+  flex:none; color:var(--accent); text-decoration:none; font-size:14px;
+  font-family:'Chakra Petch',sans-serif; font-weight:600;
+  min-height:40px; display:flex; align-items:center;
+}
+.subbar h1{ flex:1; font-size:17px; font-weight:700; margin:0; }
+.subbar .count{
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  background:var(--surface-3); border-radius:20px; padding:1px 7px; color:var(--ink-soft);
+}
 
 /* ---------- шапка ---------- */
 .topbar{

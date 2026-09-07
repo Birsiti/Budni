@@ -1,12 +1,12 @@
+// изменено 2026-09-07 11:03
 // ============================================================
-// Будни_BY admin — вкладка «Источники»: предложенные пользователями каналы,
-// одобрить/отклонить/добавить самому/удалить. Одобренные Telegram-каналы
-// подмешиваются в парсер через sheets_bridge.get_approved_channels().
-// Глобалы: STATE, apiPost (admin.js), haptic, escapeHtml, alertAsync.
+// Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
+// каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
+// Глобалы: STATE, apiPost, haptic, escapeHtml, alertAsync.
 // ============================================================
 
 async function loadSources() {
-  const el = document.getElementById('viewSources');
+  const el = document.getElementById('view');
   el.innerHTML = '<div class="empty">Загрузка…</div>';
   const res = await apiPost({ action: 'list_sources' });
   if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
@@ -21,10 +21,11 @@ function platformBadge(platform) {
 }
 
 function renderSources() {
-  const el = document.getElementById('viewSources');
+  const el = document.getElementById('view');
   const pending = STATE.sources.filter(function (s) { return s.status === 'pending'; });
   const approved = STATE.sources.filter(function (s) { return s.status === 'approved'; });
-  document.getElementById('srcCount').textContent = pending.length;
+  const c = document.getElementById('pageCount');
+  if (c) c.textContent = pending.length;
 
   const tgApproved = approved.filter(function (s) { return s.platform !== 'viber'; });
   const viberApproved = approved.filter(function (s) { return s.platform === 'viber'; });
