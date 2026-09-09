@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-09 20:28 -->
+<!-- изменено 2026-09-09 21:10 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -50,32 +50,25 @@
 
   <div class="content">
 
-    <!-- статус парсинга -->
-    <button class="status-card" id="parserToggle" aria-label="Переключить парсинг">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span class="status-text">
+    <!-- статус: парсинг + публикация в одну строку -->
+    <div class="status-row">
+      <button class="status-card" id="parserToggle" aria-label="Переключить парсинг">
+        <span class="status-dot" aria-hidden="true"></span>
         <span class="status-title" id="parserLabel">Парсинг</span>
-        <span class="status-sub" id="parserSub">—</span>
-      </span>
-      <span class="status-switch" aria-hidden="true"><i></i></span>
-    </button>
-
-    <!-- статус публикации -->
-    <button class="status-card" id="pauseToggle" aria-label="Переключить публикацию">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span class="status-text">
+        <span class="status-switch" aria-hidden="true"><i></i></span>
+      </button>
+      <button class="status-card" id="pauseToggle" aria-label="Переключить публикацию">
+        <span class="status-dot" aria-hidden="true"></span>
         <span class="status-title" id="pauseLabel">Публикация</span>
-        <span class="status-sub" id="pauseSub">—</span>
-      </span>
-      <span class="status-switch" aria-hidden="true"><i></i></span>
-    </button>
+        <span class="status-switch" aria-hidden="true"><i></i></span>
+      </button>
+    </div>
+    <div class="status-line" id="statusLine">—</div>
 
     <!-- ключевые числа -->
     <div class="stat-grid" id="statGrid">
       <div class="stat-tile"><div class="stat-value mono" id="stVac">–</div><div class="stat-label">вакансий в базе</div></div>
       <div class="stat-tile"><div class="stat-value mono" id="stQueue">–</div><div class="stat-label">в очереди на публикацию</div></div>
-      <div class="stat-tile"><div class="stat-value mono" id="stToday">–</div><div class="stat-label">опубликовано сегодня</div></div>
-      <div class="stat-tile"><div class="stat-value mono" id="stUsers">–</div><div class="stat-label">свайпали ленту</div></div>
     </div>
 
     <!-- разделы -->
