@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-07 11:11 -->
+<!-- изменено 2026-09-09 17:40 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>Будни_BY · Админ</title>
+<title>Будни_BY · Пульт</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,16 +28,16 @@
 <body>
 
 <div id="gate" class="gate hidden">
-  <h1>Будни_BY · Админ</h1>
-  <p>Вставь токен моста (тот же, что в BUDNI_BRIDGE_TOKEN) — сохранится только в этом браузере.</p>
+  <h1>Будни_BY · Пульт</h1>
+  <p>Вставь админ-токен (значение <code>ADMIN_TOKEN</code>) — сохранится только в этом браузере.</p>
   <input type="text" id="tokenInput" placeholder="токен" autocomplete="off">
-  <button class="btn" id="tokenSave">Сохранить</button>
+  <button class="btn" id="tokenSave">Войти</button>
 </div>
 
 <div id="app" class="hidden">
   <div class="topbar">
     <div class="topbar-head">
-      <h1>Будни_BY · Админ</h1>
+      <h1>Будни_BY · Пульт</h1>
       <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="4"></circle>
@@ -49,80 +49,47 @@
   </div>
 
   <div class="content">
-    <button class="pause-toggle wide" id="pauseToggle" aria-label="Переключить публикацию">
-      <span class="dot"></span><span id="pauseLabel">Публикация: идёт</span>
+
+    <!-- статус публикации -->
+    <button class="status-card" id="pauseToggle" aria-label="Переключить публикацию">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-text">
+        <span class="status-title" id="pauseLabel">Публикация идёт</span>
+        <span class="status-sub" id="pauseSub">нажми, чтобы поставить на паузу</span>
+      </span>
+      <span class="status-switch" aria-hidden="true"><i></i></span>
     </button>
 
-    <div class="hub-grid">
-      <a href="admin-moderation.html" class="hub-tile"><div class="hub-n" id="hubMod">–</div><div class="hub-l">Модерация</div></a>
-      <a href="admin-queue.html" class="hub-tile"><div class="hub-n" id="hubQueue">–</div><div class="hub-l">Очередь</div></a>
-      <a href="admin-sources.html" class="hub-tile"><div class="hub-n" id="hubSrc">–</div><div class="hub-l">Источники · на рассмотрении</div></a>
-      <a href="admin-stats.html" class="hub-tile"><div class="hub-n" id="hubToday">–</div><div class="hub-l">Опубликовано сегодня</div></a>
+    <!-- ключевые числа -->
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-tile"><div class="stat-value mono" id="stVac">–</div><div class="stat-label">вакансий в базе</div></div>
+      <div class="stat-tile"><div class="stat-value mono" id="stQueue">–</div><div class="stat-label">в очереди на публикацию</div></div>
+      <div class="stat-tile"><div class="stat-value mono" id="stToday">–</div><div class="stat-label">опубликовано сегодня</div></div>
+      <div class="stat-tile"><div class="stat-value mono" id="stUsers">–</div><div class="stat-label">свайпали ленту</div></div>
     </div>
-    <div class="hub-line" id="hubLine">Загрузка…</div>
+
+    <!-- разделы -->
+    <div class="nav-row">
+      <a href="admin-queue.html" class="nav-tile">
+        <span class="nav-n mono" id="navQueue">–</span>
+        <span class="nav-l">Очередь</span>
+        <span class="nav-arrow" aria-hidden="true">→</span>
+      </a>
+      <a href="admin-sources.html" class="nav-tile">
+        <span class="nav-n mono" id="navSrc">–</span>
+        <span class="nav-l">Источники<span class="nav-badge hidden" id="navSrcBadge"></span></span>
+        <span class="nav-arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div id="view"><div class="empty">Загрузка…</div></div>
   </div>
 </div>
 
 <script src="../app.js"></script>
 <script src="../settings.js"></script>
 <script src="admin-core.js"></script>
-<script>
-// ---- хаб ----
-var _hubPaused = false;
-
-function renderPause(p) {
-  _hubPaused = p;
-  document.getElementById('pauseToggle').classList.toggle('is-paused', p);
-  document.getElementById('pauseLabel').textContent = p ? 'Публикация: на паузе' : 'Публикация: идёт';
-}
-
-async function loadHub() {
-  const line = document.getElementById('hubLine');
-  const res = await apiGet('admin_data');
-  if (!res.ok) { line.textContent = 'Ошибка: ' + (res.error || 'неизвестная'); return; }
-  const s = res.stats || {};
-  document.getElementById('hubMod').textContent = (res.suspicious || []).length;
-  document.getElementById('hubQueue').textContent = s.queueLength || 0;
-  document.getElementById('hubToday').textContent = s.publishedToday || 0;
-  renderPause(!!res.paused);
-  line.textContent = 'В очереди ' + (s.queueLength || 0) +
-    ' · опубликовано всего ' + (s.publishedTotal || 0) +
-    ' · темп ' + (res.publishBatch || 1) + '/тик (5 мин)' +
-    ((res.publishDailyLimit || 0) ? ' · лимит ' + res.publishDailyLimit + '/сут' : '');
-
-  const sr = await apiPost({ action: 'list_sources' }).catch(function () { return { ok: false }; });
-  if (sr.ok) {
-    document.getElementById('hubSrc').textContent =
-      (sr.sources || []).filter(function (x) { return x.status === 'pending'; }).length;
-  }
-}
-
-document.getElementById('pauseToggle').addEventListener('click', async function () {
-  haptic('light');
-  const res = await apiPost({ action: 'set_publish_pause', paused: !_hubPaused });
-  if (res.ok) { renderPause(!!res.paused); haptic(_hubPaused ? 'warning' : 'success'); }
-  else { await alertAsync('Не удалось: ' + (res.error || '')); }
-});
-
-function hubBoot() {
-  initTelegram();
-  initSettings();
-  if (!getToken()) {
-    document.getElementById('gate').classList.remove('hidden');
-    document.getElementById('tokenSave').addEventListener('click', function () {
-      const v = document.getElementById('tokenInput').value.trim();
-      if (!v) return;
-      saveToken(v);
-      document.getElementById('gate').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-      loadHub();
-    });
-    return;
-  }
-  document.getElementById('app').classList.remove('hidden');
-  loadHub();
-}
-hubBoot();
-</script>
+<script src="admin-dashboard.js"></script>
+<script>dashboardBoot();</script>
 </body>
 </html>

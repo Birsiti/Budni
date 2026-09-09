@@ -4,17 +4,81 @@
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
-/* ---------- хаб (admin.html) ---------- */
-.hub-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-.hub-tile{
-  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-  padding:16px 14px; text-decoration:none; color:inherit; display:block;
+/* дашборд — плотный нижний бар, запас под home-indicator (см. miniapp-style) */
+body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
+
+/* ---------- пульт (admin.html) ---------- */
+
+/* статус публикации — крупная карточка-переключатель */
+.status-card{
+  width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+  padding:14px 16px; margin-bottom:14px; border-radius:var(--radius);
+  background:var(--ok-soft); border:1px solid transparent;
+  box-shadow:inset 0 0 0 1px var(--ok-soft);
 }
-.hub-tile:active{ background:var(--surface-2); }
-.hub-n{ font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:600; color:var(--ink); }
-.hub-l{ color:var(--ink-soft); font-size:13px; margin-top:2px; }
-.hub-line{ color:var(--ink-soft); font-size:12px; line-height:1.5; }
-.pause-toggle.wide{ width:100%; justify-content:center; margin-bottom:16px; }
+.status-card:active{ filter:brightness(.97); }
+.status-card.is-paused{ background:var(--danger-soft); }
+.status-dot{
+  width:10px; height:10px; border-radius:50%; background:var(--ok); flex:none;
+  box-shadow:0 0 0 4px var(--ok-soft); animation:pulse 2s ease-in-out infinite;
+}
+.status-card.is-paused .status-dot{ background:var(--danger); box-shadow:0 0 0 4px var(--danger-soft); animation:none; }
+@keyframes pulse{ 0%,100%{ box-shadow:0 0 0 3px var(--ok-soft); } 50%{ box-shadow:0 0 0 7px transparent; } }
+.status-text{ flex:1; min-width:0; }
+.status-title{ display:block; font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px; color:var(--ink); }
+.status-sub{ display:block; font-size:12px; color:var(--ink-soft); margin-top:2px; }
+.status-switch{
+  flex:none; width:44px; height:26px; border-radius:999px; background:var(--ok);
+  position:relative; transition:background .18s;
+}
+.status-switch i{
+  position:absolute; top:3px; left:21px; width:20px; height:20px; border-radius:50%;
+  background:#fff; transition:left .18s; box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.status-card.is-paused .status-switch{ background:var(--surface-3); }
+.status-card.is-paused .status-switch i{ left:3px; }
+
+/* навигация в разделы */
+.nav-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 6px; }
+.nav-tile{
+  position:relative; display:flex; flex-direction:column; gap:2px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px 14px 12px; text-decoration:none; color:inherit;
+}
+.nav-tile:active{ background:var(--surface-2); }
+.nav-n{ font-size:22px; font-weight:600; color:var(--ink); }
+.nav-l{ font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:6px; }
+.nav-arrow{ position:absolute; right:12px; top:12px; color:var(--ink-faint); font-size:16px; }
+.nav-badge{
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  background:var(--accent); color:#fff; border-radius:999px; padding:1px 6px; line-height:1.5;
+}
+
+/* строка-показатель с полоской */
+.brow{ padding:10px 0; border-bottom:1px solid var(--line); }
+.brow:last-child{ border-bottom:none; }
+.brow-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:14px; }
+.brow-num{ color:var(--ink-soft); white-space:nowrap; flex:none; font-size:13px; }
+.brow-num .dim{ color:var(--ink-faint); }
+.bar{ height:4px; border-radius:2px; background:var(--surface-3); margin-top:7px; overflow:hidden; }
+.bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
+.bar.bar-like i{ background:var(--ok); }
+.brow-total{ border-top:2px solid var(--line-strong); margin-top:2px; padding-top:12px; font-weight:700; }
+.brow-total .brow-num{ color:var(--ink); }
+
+/* полоса лайков */
+.likebar{ height:8px; border-radius:999px; background:var(--danger-soft); overflow:hidden; }
+.likebar-like{ display:block; height:100%; background:var(--ok); border-radius:999px; }
+
+.wide-btn{ width:100%; margin:4px 0 8px; }
+
+details.more{ margin:8px 0 0; }
+details.more > summary{
+  list-style:none; cursor:pointer; color:var(--accent); font-size:13px;
+  font-family:'Chakra Petch',sans-serif; font-weight:600; padding:10px 0;
+}
+details.more > summary::-webkit-details-marker{ display:none; }
+details.more[open] > summary{ color:var(--ink-soft); }
 
 /* ---------- шапка подстраницы ---------- */
 .subbar{
@@ -34,31 +98,12 @@
 
 /* ---------- шапка ---------- */
 .topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:8px 16px 16px; position:relative;
+  padding:8px 16px 14px; position:relative;
+}
+.topbar-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
 }
 .topbar h1{ font-size:18px; font-weight:700; margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.topbar-actions{ flex:none; }
-.refresh-btn{
-  min-width:44px; min-height:44px; border-radius:var(--radius-sm);
-  background:var(--surface-2); border:1px solid var(--line);
-  color:var(--ink-soft); font-size:18px; display:flex; align-items:center; justify-content:center;
-  flex:none;
-}
-.refresh-btn:active{ background:var(--surface-3); }
-.topbar-actions{ display:flex; align-items:center; gap:8px; }
-.pause-toggle{
-  display:flex; align-items:center; gap:8px;
-  min-height:44px; padding:0 14px; border-radius:999px;
-  border:1px solid var(--line); background:var(--surface-2);
-  font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
-  color:var(--ink-soft); white-space:nowrap;
-}
-.pause-toggle .dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none; }
-.pause-toggle:active{ background:var(--surface-3); }
-.pause-toggle.is-paused{ color:var(--danger); border-color:var(--danger-soft); background:var(--danger-soft); }
-.pause-toggle.is-paused .dot{ background:var(--danger); }
-.pause-toggle.is-paused:active{ background:var(--danger-soft); }
 
 /* ---------- вкладки со счётчиками, sticky ---------- */
 .tabs{
@@ -178,7 +223,8 @@
   padding:24px; gap:12px;
 }
 .gate h1{ font-size:20px; margin:0 0 4px; }
-.gate p{ color:var(--ink-soft); font-size:13px; margin:0 0 12px; }
+.gate p{ color:var(--ink-soft); font-size:13px; line-height:1.5; margin:0 0 12px; }
+.gate code{ font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--surface-3); padding:1px 5px; border-radius:5px; }
 .gate input{
   min-height:44px; border-radius:var(--radius-sm); background:var(--surface-2);
   border:1px solid var(--line); color:var(--ink); padding:0 12px; font-family:'JetBrains Mono',monospace;
