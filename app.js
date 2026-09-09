@@ -35,7 +35,7 @@ function resolveScheme() {
 
 // ВСТАВЬ реальный URL деплоя Apps Script (тот же, что BUDNI_APPS_SCRIPT_URL).
 // Одно место на оба мини-аппа — раньше дублировалось в двух HTML.
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDoUgzfE7NIs1m57RapJbSMPdOMheg-e4I2qoyu6VPoBBQH9cigsGgprdtp00lOnbu/exec';
+var APPS_SCRIPT_URL = 'https://budni.tg-studio.xyz/exec';
 
 // сферы — синхронизировано с SECTORS в structurer.py и SECTOR_BUCKETS в Apps Script
 var SECTORS = [
