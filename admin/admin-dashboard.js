@@ -1,4 +1,4 @@
-// изменено 2026-09-09 21:10
+// изменено 2026-09-09 22:55
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -56,6 +56,13 @@ async function loadDashboard() {
   setNum('stVac', totalOf(s.bySector));
   setNum('stQueue', s.queueLength || 0);
   setNum('navQueue', s.queueLength || 0);
+
+  const rev = (main.suspicious || []).length;
+  const qb = document.getElementById('navQueueBadge');
+  if (qb) {
+    if (rev) { qb.textContent = rev; qb.classList.remove('hidden'); }
+    else qb.classList.add('hidden');
+  }
 
   renderBody();
   loadSwipeInto();     // фоном

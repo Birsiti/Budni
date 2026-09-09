@@ -1,8 +1,9 @@
-// изменено 2026-09-07 11:03
+// изменено 2026-09-09 22:55
 // ============================================================
 // Будни_BY admin — страница «Очередь» (admin-queue.html): что вот-вот
 // опубликуется. Убрать / вверх / опубликовать сейчас / сменить сферу /
-// поправить текст / забанить канал-источник. Рендерит в #view.
+// поправить текст / забанить канал-источник. Сверху — блок «На проверке»
+// (подозрительные вакансии: одобрить / убрать). Рендерит в #view.
 // Глобалы: STATE, apiPost, escapeHtml, haptic, confirmAsync, alertAsync, SECTORS.
 // ============================================================
 
@@ -12,8 +13,32 @@ async function loadQueue() {
   const res = await apiPost({ action: 'get_queue', limit: 80 });
   if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось: ' + escapeHtml(res.error || '') + '</div>'; return; }
   STATE.queue = res.queue || [];
+  STATE.review = res.review || [];
   STATE.queueSectors = res.sectors || SECTORS.map(function (s) { return s[0]; });
   renderQueue();
+}
+
+function renderReview() {
+  const s = STATE.review || [];
+  if (!s.length) return '';
+  return '<div class="review-box">' +
+    '<div class="section-title" style="margin-top:0">⚠ На проверке <span class="count">' + s.length + '</span></div>' +
+    '<p class="rate-note" style="margin:0 0 10px;">Помечены как возможный скам — в группу не уходят, пока не решишь.</p>' +
+    s.map(function (v, i) {
+      const meta = [v.city, v.channel].filter(Boolean).join(' · ');
+      return '<div class="qcard">' +
+        '<div class="qpos">' + escapeHtml(v.position || '(без должности)') + '</div>' +
+        (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') +
+        (v.suspicious_reason ? '<div class="card-reason">' + escapeHtml(v.suspicious_reason) + '</div>' : '') +
+        '<button class="qtoggle" data-rv-toggle="' + i + '">текст объявления ▾</button>' +
+        '<div class="qdetail" id="rvd-' + i + '"><pre class="rv-text">' + escapeHtml(v.clean_text || '—') + '</pre></div>' +
+        '<div class="qactions">' +
+          '<button class="qbtn ok" data-rv-ok="' + i + '">✓ Одобрить</button>' +
+          '<button class="qbtn danger" data-rv-no="' + i + '">✕ Убрать</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+  '</div>';
 }
 
 function renderQueue() {
@@ -22,10 +47,9 @@ function renderQueue() {
   const c = document.getElementById('pageCount');
   if (c) c.textContent = q.length;
 
-  if (q.length === 0) { el.innerHTML = '<div class="empty">Очередь пуста</div>'; return; }
-
-  el.innerHTML =
-    '<p class="rate-note" style="margin:0 0 12px;">Порядок сверху вниз — так и публикуется (по кругу из разных сфер). Первые ' + q.length + '.</p>' +
+  const queueHtml = q.length === 0
+    ? '<div class="empty">Очередь пуста</div>'
+    : ('<p class="rate-note" style="margin:0 0 12px;">Порядок сверху вниз — так и публикуется (по кругу из разных сфер). Первые ' + q.length + '.</p>' +
     q.map(function (v, i) {
       if (v.missing) {
         return '<div class="qcard"><div class="qtop"><div class="qpos">— вакансия удалена из базы —</div>' +
@@ -63,9 +87,36 @@ function renderQueue() {
           '<button class="qbtn danger" data-q-remove="' + escapeHtml(v.id) + '">✕ убрать</button>' +
         '</div>' +
       '</div>';
-    }).join('');
+    }).join(''));
 
+  el.innerHTML = renderReview() + queueHtml;
   bindQueue(el);
+  bindReview(el);
+}
+
+function bindReview(el) {
+  el.querySelectorAll('[data-rv-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('rvd-' + b.getAttribute('data-rv-toggle')).classList.toggle('open');
+      haptic('light');
+    });
+  });
+  el.querySelectorAll('[data-rv-ok]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const v = STATE.review[+b.getAttribute('data-rv-ok')];
+      if (!v) return;
+      if (!(await confirmAsync('Одобрить «' + (v.position || '') + '»? Уйдёт в очередь на публикацию.'))) return;
+      qAction(b, { action: 'approve_vacancy', id: v.id, sector: v.sector });
+    });
+  });
+  el.querySelectorAll('[data-rv-no]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const v = STATE.review[+b.getAttribute('data-rv-no')];
+      if (!v) return;
+      if (!(await confirmAsync('Убрать «' + (v.position || '') + '»? Не будет опубликовано.'))) return;
+      qAction(b, { action: 'reject_vacancy', id: v.id, sector: v.sector });
+    });
+  });
 }
 
 function bindQueue(el) {

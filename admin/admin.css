@@ -1,4 +1,4 @@
-/* изменено 2026-09-09 21:10 */
+/* изменено 2026-09-09 22:55 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -221,6 +221,19 @@ details.more[open] > summary{ color:var(--ink-soft); }
 .sector-total .sector-count{ color:var(--ink); }
 
 /* ---------- вкладка «Очередь» ---------- */
+
+/* блок «На проверке» — подозрительные вакансии над очередью */
+.review-box{
+  border:1px solid var(--danger-soft); background:var(--danger-soft);
+  border-radius:var(--radius); padding:12px; margin-bottom:18px;
+}
+.review-box .qcard{ margin-bottom:8px; }
+.review-box .qcard:last-child{ margin-bottom:0; }
+.rv-text{
+  white-space:pre-wrap; font-family:'Inter',sans-serif; font-size:12px;
+  color:var(--ink-soft); margin:8px 0 0; max-height:280px; overflow:auto;
+}
+
 .qcard{
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
   padding:12px 14px; margin-bottom:10px;
