@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-09 17:40 -->
+<!-- изменено 2026-09-09 20:28 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -50,12 +50,22 @@
 
   <div class="content">
 
+    <!-- статус парсинга -->
+    <button class="status-card" id="parserToggle" aria-label="Переключить парсинг">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-text">
+        <span class="status-title" id="parserLabel">Парсинг</span>
+        <span class="status-sub" id="parserSub">—</span>
+      </span>
+      <span class="status-switch" aria-hidden="true"><i></i></span>
+    </button>
+
     <!-- статус публикации -->
     <button class="status-card" id="pauseToggle" aria-label="Переключить публикацию">
       <span class="status-dot" aria-hidden="true"></span>
       <span class="status-text">
-        <span class="status-title" id="pauseLabel">Публикация идёт</span>
-        <span class="status-sub" id="pauseSub">нажми, чтобы поставить на паузу</span>
+        <span class="status-title" id="pauseLabel">Публикация</span>
+        <span class="status-sub" id="pauseSub">—</span>
       </span>
       <span class="status-switch" aria-hidden="true"><i></i></span>
     </button>

@@ -1,4 +1,4 @@
-// изменено 2026-09-09 17:40
+// изменено 2026-09-09 20:28
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Статус публикации + ключевые числа + темп + статистика по сферам/
@@ -12,7 +12,8 @@ var RATE_OPTIONS = [1, 2, 3, 5, 8, 12];
 var LIMIT_OPTIONS = [0, 30, 50, 100, 200, 400];
 
 var D = {};          // состояние экрана
-var _paused = false;
+var _paused = false;      // публикация
+var _parserPaused = false;
 
 // прогреваем запросы сразу, потребляем один раз каждый
 var _pfMain = null, _pfSwipes = null, _pfSources = null;
@@ -31,8 +32,10 @@ async function loadDashboard() {
 
   D.stats = main.stats || {};
   D.publishBatch = main.publishBatch || 1;
+  D.publishRateMin = main.publishEveryMin || 30;
   D.publishDailyLimit = main.publishDailyLimit || 0;
-  renderPause(!!main.paused);
+  renderParser(main.parser || {});
+  renderPause(!!main.paused, (main.publisher || {}).seenSec);
 
   const s = D.stats;
   setNum('stVac', totalOf(s.bySector));
@@ -50,15 +53,37 @@ function totalOf(obj) {
 }
 function setNum(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
+function ago(sec) {
+  if (sec == null) return 'нет сигнала';
+  if (sec < 90) return 'сигнал ' + sec + ' сек назад';
+  if (sec < 5400) return 'сигнал ' + Math.round(sec / 60) + ' мин назад';
+  return 'сигнал ' + Math.round(sec / 3600) + ' ч назад';
+}
+
+// ---------- статус парсинга ----------
+function renderParser(p) {
+  _parserPaused = !!p.paused;
+  const card = document.getElementById('parserToggle');
+  const stale = p.seenSec == null || p.seenSec > 180;   // нет свежего heartbeat
+  card.classList.toggle('is-paused', _parserPaused);
+  card.classList.toggle('is-stale', !_parserPaused && stale);
+  document.getElementById('parserLabel').textContent =
+    _parserPaused ? 'Парсинг на паузе' : (stale ? 'Парсинг — нет сигнала' : 'Парсинг идёт');
+  document.getElementById('parserSub').textContent =
+    _parserPaused ? 'новые вакансии не собираются'
+    : stale ? (ago(p.seenSec) + ' — проверь iMac')
+    : ((p.channels || 0) + ' каналов · ' + ago(p.seenSec));
+}
+
 // ---------- статус публикации ----------
-function renderPause(p) {
+function renderPause(p, seenSec) {
   _paused = p;
   const card = document.getElementById('pauseToggle');
   card.classList.toggle('is-paused', p);
   document.getElementById('pauseLabel').textContent = p ? 'Публикация на паузе' : 'Публикация идёт';
   document.getElementById('pauseSub').textContent = p
     ? 'вакансии копятся в очереди, в группу не уходят'
-    : 'нажми, чтобы поставить на паузу';
+    : ((D.publishBatch || 1) + ' / ' + (D.publishRateMin || 30) + ' мин · ' + ago(seenSec));
 }
 
 // ---------- тело: темп + сферы + свайпы + каналы/города ----------
@@ -200,12 +225,23 @@ async function loadSourcesInto() {
   if (pending) { badge.textContent = pending; badge.classList.remove('hidden'); }
 }
 
-// ---------- пауза ----------
+// ---------- паузы ----------
 document.getElementById('pauseToggle').addEventListener('click', async function () {
   haptic('light');
   const res = await apiPost({ action: 'set_publish_pause', paused: !_paused });
-  if (res.ok) { renderPause(!!res.paused); haptic(_paused ? 'warning' : 'success'); }
+  if (res.ok) { renderPause(!!res.paused, null); haptic(_paused ? 'warning' : 'success'); }
   else { await alertAsync('Не удалось: ' + (res.error || '')); }
+});
+
+document.getElementById('parserToggle').addEventListener('click', async function () {
+  if (!_parserPaused && !(await confirmAsync('Остановить парсинг? Новые вакансии перестанут собираться.'))) return;
+  haptic('light');
+  const res = await apiPost({ action: 'set_parser_pause', paused: !_parserPaused });
+  if (res.ok) {
+    _parserPaused = !!res.paused;
+    haptic(_parserPaused ? 'warning' : 'success');
+    setTimeout(function () { prefetch(); loadDashboard(); }, 800);   // подтянуть свежий heartbeat
+  } else { await alertAsync('Не удалось: ' + (res.error || '')); }
 });
 
 // ---------- старт ----------
