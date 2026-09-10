@@ -1,19 +1,21 @@
-// изменено 2026-09-10 00:15
+// изменено 2026-09-10 02:15
 // ============================================================
 // Будни_BY client — свайп-лента вакансий + переключатель (рядом/вахта) +
-// фильтр (город / направление / без опыта).
+// фильтр (город / направление / без опыта / подработка).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
 
 // ================= ФИЛЬТР ЛЕНТЫ =================
 var FILTER_KEY = 'budni_filter';
-var FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом' };
+var FILTER = { city: '', sectors: [], noExperience: false, podrabotka: false, jobType: 'рядом' };
 try { FILTER = Object.assign(FILTER, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}')); } catch (e) {}
 if (!Array.isArray(FILTER.sectors)) FILTER.sectors = [];
 if (FILTER.jobType !== 'вахта') FILTER.jobType = 'рядом';
 
-function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience; }
+function filterIsActive() {
+  return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience || !!FILTER.podrabotka;
+}
 
 // город не действует для вахты — прячем поле, чтобы не путать
 function applyJobTypeUI() {
@@ -29,6 +31,7 @@ function updateFilterSummary() {
   if (FILTER.sectors.length === 1) parts.push(FILTER.sectors[0]);
   else if (FILTER.sectors.length > 1) parts.push(FILTER.sectors.length + ' направл.');
   if (FILTER.noExperience) parts.push('без опыта');
+  if (FILTER.podrabotka) parts.push('подработка');
   document.getElementById('filterSummary').textContent = parts.length ? ' · ' + parts.join(', ') : '';
   document.getElementById('filterToggle').classList.toggle('is-active', filterIsActive());
 }
@@ -60,6 +63,7 @@ function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
   document.getElementById('filterNoExp').checked = !!FILTER.noExperience;
+  document.getElementById('filterPodrabotka').checked = !!FILTER.podrabotka;
   applyJobTypeUI();
   updateFilterSummary();
 
@@ -84,6 +88,7 @@ function initFilterUI() {
       .call(document.querySelectorAll('#filterSectors input:checked'))
       .map(function (i) { return i.value; });
     FILTER.noExperience = document.getElementById('filterNoExp').checked;
+    FILTER.podrabotka = document.getElementById('filterPodrabotka').checked;
     saveFilter();
     updateFilterSummary();
     document.getElementById('filterPanel').classList.add('hidden');
@@ -91,10 +96,11 @@ function initFilterUI() {
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');
-    FILTER = { city: '', sectors: [], noExperience: false, jobType: FILTER.jobType };
+    FILTER = { city: '', sectors: [], noExperience: false, podrabotka: false, jobType: FILTER.jobType };
     saveFilter();
     document.getElementById('filterCity').value = '';
     document.getElementById('filterNoExp').checked = false;
+    document.getElementById('filterPodrabotka').checked = false;
     renderFilterSectorChips();
     updateFilterSummary();
     document.getElementById('filterPanel').classList.add('hidden');
@@ -112,7 +118,10 @@ async function loadDeck() {
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
   let res;
   try {
-    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience, jobType: FILTER.jobType });
+    res = await apiPost({
+      action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors,
+      noExperience: FILTER.noExperience, podrabotka: FILTER.podrabotka, jobType: FILTER.jobType,
+    });
   } catch (e) { res = { ok: false, error: 'нет связи' }; }
   if (!res.ok) {
     wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии' +
@@ -145,6 +154,7 @@ function renderCard() {
         (v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая вакансия</span>' : '') +
         (v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '') +
         (v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '') +
+        (v.employment_type === 'подработка' ? '<span class="badge">⏳ Подработка</span>' : '') +
         (v.city ? '<span class="badge">' + escapeHtml(v.city) + '</span>' : '') +
         (v.salary_text ? '<span class="badge">' + escapeHtml(v.salary_text) + '</span>' : '') +
       '</div>' +
