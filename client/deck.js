@@ -1,16 +1,17 @@
+// изменено 2026-09-10 00:00
 // ============================================================
-// Будни_BY client — свайп-лента вакансий + фильтр (город / направление).
+// Будни_BY client — свайп-лента вакансий + фильтр (город / направление / без опыта).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
 
 // ================= ФИЛЬТР ЛЕНТЫ =================
 var FILTER_KEY = 'budni_filter';
-var FILTER = { city: '', sectors: [] };
+var FILTER = { city: '', sectors: [], noExperience: false };
 try { FILTER = Object.assign(FILTER, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}')); } catch (e) {}
 if (!Array.isArray(FILTER.sectors)) FILTER.sectors = [];
 
-function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0; }
+function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience; }
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
 
@@ -19,6 +20,7 @@ function updateFilterSummary() {
   if (FILTER.city) parts.push(FILTER.city);
   if (FILTER.sectors.length === 1) parts.push(FILTER.sectors[0]);
   else if (FILTER.sectors.length > 1) parts.push(FILTER.sectors.length + ' направл.');
+  if (FILTER.noExperience) parts.push('без опыта');
   document.getElementById('filterSummary').textContent = parts.length ? ' · ' + parts.join(', ') : '';
   document.getElementById('filterToggle').classList.toggle('is-active', filterIsActive());
 }
@@ -49,6 +51,7 @@ function applyProfileToFilter(city, sectors) {
 function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
+  document.getElementById('filterNoExp').checked = !!FILTER.noExperience;
   updateFilterSummary();
 
   document.getElementById('filterToggle').addEventListener('click', function () {
@@ -61,6 +64,7 @@ function initFilterUI() {
     FILTER.sectors = Array.prototype.slice
       .call(document.querySelectorAll('#filterSectors input:checked'))
       .map(function (i) { return i.value; });
+    FILTER.noExperience = document.getElementById('filterNoExp').checked;
     saveFilter();
     updateFilterSummary();
     document.getElementById('filterPanel').classList.add('hidden');
@@ -68,9 +72,10 @@ function initFilterUI() {
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');
-    FILTER = { city: '', sectors: [] };
+    FILTER = { city: '', sectors: [], noExperience: false };
     try { localStorage.removeItem(FILTER_KEY); } catch (e) {}
     document.getElementById('filterCity').value = '';
+    document.getElementById('filterNoExp').checked = false;
     renderFilterSectorChips();
     updateFilterSummary();
     document.getElementById('filterPanel').classList.add('hidden');
@@ -88,7 +93,7 @@ async function loadDeck() {
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
   let res;
   try {
-    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors });
+    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience });
   } catch (e) { res = { ok: false, error: 'нет связи' }; }
   if (!res.ok) {
     wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии' +
@@ -119,6 +124,7 @@ function renderCard() {
       '<div class="swipe-tag skip" id="tagSkip">СКИП</div>' +
       '<div class="card-badges">' +
         (v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая вакансия</span>' : '') +
+        (v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '') +
         '<span class="badge">' + escapeHtml(v.city || '') + '</span>' +
         (v.salary_text ? '<span class="badge">' + escapeHtml(v.salary_text) + '</span>' : '') +
       '</div>' +
