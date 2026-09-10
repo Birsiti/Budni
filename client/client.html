@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-10 00:00 -->
+<!-- изменено 2026-09-10 00:15 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -54,13 +54,19 @@
       <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
       <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
     </div>
+    <div class="field">
+      <div class="chip-group" id="jobTypeToggle">
+        <label class="chip"><input type="radio" name="jobType" value="рядом" checked><span>📍 Рядом</span></label>
+        <label class="chip"><input type="radio" name="jobType" value="вахта"><span>🧳 Вахта</span></label>
+      </div>
+    </div>
     <div class="filter-bar">
       <button class="filter-toggle" id="filterToggle">
         <span>⚙ Фильтр</span><span class="summary" id="filterSummary"></span>
       </button>
     </div>
     <div class="filter-panel hidden" id="filterPanel">
-      <div class="field">
+      <div class="field" id="filterCityField">
         <label>Город</label>
         <input type="text" id="filterCity" placeholder="любой город" autocomplete="off">
       </div>

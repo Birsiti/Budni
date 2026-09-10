@@ -1,17 +1,25 @@
-// изменено 2026-09-10 00:00
+// изменено 2026-09-10 00:15
 // ============================================================
-// Будни_BY client — свайп-лента вакансий + фильтр (город / направление / без опыта).
+// Будни_BY client — свайп-лента вакансий + переключатель (рядом/вахта) +
+// фильтр (город / направление / без опыта).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
 
 // ================= ФИЛЬТР ЛЕНТЫ =================
 var FILTER_KEY = 'budni_filter';
-var FILTER = { city: '', sectors: [], noExperience: false };
+var FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом' };
 try { FILTER = Object.assign(FILTER, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}')); } catch (e) {}
 if (!Array.isArray(FILTER.sectors)) FILTER.sectors = [];
+if (FILTER.jobType !== 'вахта') FILTER.jobType = 'рядом';
 
 function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience; }
+
+// город не действует для вахты — прячем поле, чтобы не путать
+function applyJobTypeUI() {
+  document.querySelector('input[name="jobType"][value="' + FILTER.jobType + '"]').checked = true;
+  document.getElementById('filterCityField').classList.toggle('hidden', FILTER.jobType === 'вахта');
+}
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
 
@@ -52,7 +60,18 @@ function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
   document.getElementById('filterNoExp').checked = !!FILTER.noExperience;
+  applyJobTypeUI();
   updateFilterSummary();
+
+  document.querySelectorAll('input[name="jobType"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      haptic('light');
+      FILTER.jobType = input.value;
+      saveFilter();
+      applyJobTypeUI();
+      loadDeck();
+    });
+  });
 
   document.getElementById('filterToggle').addEventListener('click', function () {
     haptic('light');
@@ -72,8 +91,8 @@ function initFilterUI() {
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');
-    FILTER = { city: '', sectors: [], noExperience: false };
-    try { localStorage.removeItem(FILTER_KEY); } catch (e) {}
+    FILTER = { city: '', sectors: [], noExperience: false, jobType: FILTER.jobType };
+    saveFilter();
     document.getElementById('filterCity').value = '';
     document.getElementById('filterNoExp').checked = false;
     renderFilterSectorChips();
@@ -93,7 +112,7 @@ async function loadDeck() {
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
   let res;
   try {
-    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience });
+    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience, jobType: FILTER.jobType });
   } catch (e) { res = { ok: false, error: 'нет связи' }; }
   if (!res.ok) {
     wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии' +
@@ -124,8 +143,9 @@ function renderCard() {
       '<div class="swipe-tag skip" id="tagSkip">СКИП</div>' +
       '<div class="card-badges">' +
         (v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая вакансия</span>' : '') +
+        (v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '') +
         (v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '') +
-        '<span class="badge">' + escapeHtml(v.city || '') + '</span>' +
+        (v.city ? '<span class="badge">' + escapeHtml(v.city) + '</span>' : '') +
         (v.salary_text ? '<span class="badge">' + escapeHtml(v.salary_text) + '</span>' : '') +
       '</div>' +
       '<h2>' + escapeHtml(v.position || '(без названия)') + '</h2>' +
