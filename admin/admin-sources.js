@@ -1,4 +1,4 @@
-// изменено 2026-09-07 11:03
+// изменено 2026-09-10 01:30
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
 // каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
@@ -32,7 +32,7 @@ function renderSources() {
 
   const addForm =
     '<div class="section-title" style="margin-top:0;">Добавить канал для парсинга</div>' +
-    '<div class="field"><label>Ссылка или username</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala"></div>' +
+    '<div class="field"><label>Ссылка или username</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala, t.me/+хеш (приватная) или nazvanie_kanala"></div>' +
     '<div class="field"><label>Платформа</label>' +
       '<div class="chip-group">' +
         '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
