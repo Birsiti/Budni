@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-10 00:15 -->
+<!-- изменено 2026-09-10 17:05 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -30,16 +30,29 @@
 <div class="topbar">
   <div class="topbar-head">
     <h1>Будни_BY</h1>
-    <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="4"></circle>
-        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
-      </svg>
-    </button>
+    <div class="topbar-actions">
+      <button class="icon-btn-round" id="favBtn" aria-label="Избранное">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1Z"></path>
+        </svg>
+        <span class="icon-badge hidden" id="favCount"></span>
+      </button>
+      <button class="icon-btn-round" id="filterBtn" aria-label="Фильтр">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 5h18M6 12h12M10 19h4"></path>
+        </svg>
+        <span class="icon-dot hidden" id="filterDot"></span>
+      </button>
+      <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+      </button>
+    </div>
   </div>
   <div class="tabs">
     <button class="tab active" data-tab="deck">Вакансии</button>
-    <button class="tab" data-tab="favorites">Избранное <span id="favCount"></span></button>
     <button class="tab" data-tab="profile">Анкета <span class="dot hidden" id="profileDot"></span></button>
     <button class="tab" data-tab="post">Разместить</button>
   </div>
@@ -49,29 +62,20 @@
 <div class="content">
 
   <div id="viewDeck">
-    <div class="deck-nudge hidden" id="deckNudge">
-      <span class="deck-nudge-t">Заполните анкету — подстроим ленту под вас</span>
-      <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
-      <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
-    </div>
-    <div class="field">
-      <div class="chip-group" id="jobTypeToggle">
-        <label class="chip"><input type="radio" name="jobType" value="рядом" checked><span>📍 Рядом</span></label>
-        <label class="chip"><input type="radio" name="jobType" value="вахта"><span>🧳 Вахта</span></label>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <button class="filter-toggle" id="filterToggle">
-        <span>⚙ Фильтр</span><span class="summary" id="filterSummary"></span>
-      </button>
-    </div>
     <div class="filter-panel hidden" id="filterPanel">
+      <div class="field">
+        <label>Формат</label>
+        <div class="chip-group" id="jobTypeToggle">
+          <label class="chip"><input type="radio" name="jobType" value="рядом" checked><span>📍 Рядом</span></label>
+          <label class="chip"><input type="radio" name="jobType" value="вахта"><span>🧳 Вахта</span></label>
+        </div>
+      </div>
       <div class="field" id="filterCityField">
         <label>Город</label>
         <input type="text" id="filterCity" placeholder="любой город" autocomplete="off">
       </div>
       <div class="field">
-        <label>Направление <span style="text-transform:none; letter-spacing:0;">— не выбрано = все</span></label>
+        <label>Направление <span class="lbl-soft">— не выбрано = все</span></label>
         <div class="chip-group" id="filterSectors"></div>
       </div>
       <div class="field">
@@ -83,6 +87,11 @@
         <button class="reset" id="filterReset">Сбросить</button>
         <button class="apply" id="filterApply">Показать</button>
       </div>
+    </div>
+    <div class="deck-nudge hidden" id="deckNudge">
+      <span class="deck-nudge-t">Заполните анкету — подстроим ленту под вас</span>
+      <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
+      <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
     </div>
     <div class="deck-wrap" id="deckWrap"></div>
     <div class="deck-actions" id="deckActions">
@@ -232,23 +241,49 @@ function apiPost(payload){
   return apiCall(Object.assign({ initData: tg ? tg.initData : '' }, payload));
 }
 
-// ---------- вкладки ----------
+// ---------- переключение экранов (табы + сердечко «Избранное» в шапке) ----------
+// Избранное больше не таб — открывается кнопкой ❤️ в шапке (toggle с лентой).
+function showView(name){
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tab') === name);
+  });
+  document.getElementById('favBtn').classList.toggle('is-open', name === 'favorites');
+  document.getElementById('viewDeck').classList.toggle('hidden', name !== 'deck');
+  document.getElementById('viewFavorites').classList.toggle('hidden', name !== 'favorites');
+  document.getElementById('viewProfile').classList.toggle('hidden', name !== 'profile');
+  document.getElementById('viewPost').classList.toggle('hidden', name !== 'post');
+  document.getElementById('deckActions').classList.toggle('hidden', name !== 'deck');
+  document.getElementById('postSubmitBar').classList.toggle('hidden', name !== 'post');
+  document.getElementById('filterBtn').classList.toggle('hidden', name !== 'deck');
+  if (name === 'favorites') loadFavorites();
+  if (name === 'profile') loadSubscriptions();
+  if (name === 'post') loadMyVacancies();
+}
+
 document.querySelectorAll('.tab').forEach(function(btn){
   btn.addEventListener('click', function(){
     haptic('light');
-    const tab = btn.getAttribute('data-tab');
-    document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b === btn); });
-    document.getElementById('viewDeck').classList.toggle('hidden', tab !== 'deck');
-    document.getElementById('viewFavorites').classList.toggle('hidden', tab !== 'favorites');
-    document.getElementById('viewProfile').classList.toggle('hidden', tab !== 'profile');
-    document.getElementById('viewPost').classList.toggle('hidden', tab !== 'post');
-    document.getElementById('deckActions').classList.toggle('hidden', tab !== 'deck');
-    document.getElementById('postSubmitBar').classList.toggle('hidden', tab !== 'post');
-    if (tab === 'favorites') loadFavorites();
-    if (tab === 'profile') loadSubscriptions();
-    if (tab === 'post') loadMyVacancies();
+    showView(btn.getAttribute('data-tab'));
   });
 });
+
+// ❤️ в шапке — открыть/закрыть «Избранное»
+document.getElementById('favBtn').addEventListener('click', function(){
+  haptic('light');
+  showView(document.getElementById('favBtn').classList.contains('is-open') ? 'deck' : 'favorites');
+});
+
+// счётчик избранного — на бейдже сердечка (глобально, зовётся из favorites.js и deck.js)
+function setFavCount(n){
+  const el = document.getElementById('favCount');
+  el.textContent = n > 0 ? n : '';
+  el.classList.toggle('hidden', !(n > 0));
+}
+// короткая «красная вспышка» сердечка при свайпе-лайке
+function flashFavHeart(){
+  const b = document.getElementById('favBtn');
+  b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+}
 
 // ---------- старт ----------
 initTelegram();
@@ -259,6 +294,7 @@ initSubscriptions();
 initPost();
 initProfile();
 loadDeck();
+loadFavorites().catch(function(){});   // прогрев + счётчик на сердечке
 prefillFromContact();
 loadProfile();
 handleRenewParam();

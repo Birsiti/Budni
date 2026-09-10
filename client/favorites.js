@@ -1,5 +1,6 @@
+// изменено 2026-09-10 17:05
 // ============================================================
-// Будни_BY client — вкладка «Избранное» (свайп вправо).
+// Будни_BY client — «Избранное» (свайп вправо). Открывается ❤️ в шапке.
 // Тап по карточке — раскрывает полный текст вакансии + «Поделиться».
 // ✕ — убрать из избранного. Телефон — ссылкой tel: (тап = позвонить).
 // Глобалы из app.js: apiPost (client.html), escapeHtml, haptic, confirmAsync,
@@ -17,7 +18,7 @@ async function loadFavorites() {
   catch (e) { res = { ok: false }; }
   if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
   FAVS = res.favorites || [];
-  document.getElementById('favCount').textContent = FAVS.length ? '(' + FAVS.length + ')' : '';
+  setFavCount(FAVS.length);
   if (FAVS.length === 0) {
     el.innerHTML = '<div class="empty">Пока пусто — свайпните вправо понравившуюся вакансию 👉</div>';
     return;

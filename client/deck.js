@@ -1,8 +1,10 @@
-// изменено 2026-09-10 00:15
+// изменено 2026-09-10 17:05
 // ============================================================
-// Будни_BY client — свайп-лента вакансий + переключатель (рядом/вахта) +
-// фильтр (город / направление / без опыта).
+// Будни_BY client — свайп-лента вакансий.
+// Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
+// открывается кнопкой-иконкой в шапке (#filterBtn).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
+// Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
 
@@ -15,27 +17,23 @@ if (FILTER.jobType !== 'вахта') FILTER.jobType = 'рядом';
 
 function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience; }
 
-// город не действует для вахты — прячем поле, чтобы не путать
+// город не действует для вахты — прячем поле в панели, чтобы не путать
 function applyJobTypeUI() {
-  document.querySelector('input[name="jobType"][value="' + FILTER.jobType + '"]').checked = true;
+  var r = document.querySelector('input[name="jobType"][value="' + FILTER.jobType + '"]');
+  if (r) r.checked = true;
   document.getElementById('filterCityField').classList.toggle('hidden', FILTER.jobType === 'вахта');
 }
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
 
+// индикатор активного фильтра — точка на иконке фильтра в шапке
 function updateFilterSummary() {
-  const parts = [];
-  if (FILTER.city) parts.push(FILTER.city);
-  if (FILTER.sectors.length === 1) parts.push(FILTER.sectors[0]);
-  else if (FILTER.sectors.length > 1) parts.push(FILTER.sectors.length + ' направл.');
-  if (FILTER.noExperience) parts.push('без опыта');
-  document.getElementById('filterSummary').textContent = parts.length ? ' · ' + parts.join(', ') : '';
-  document.getElementById('filterToggle').classList.toggle('is-active', filterIsActive());
+  document.getElementById('filterDot').classList.toggle('hidden', !filterIsActive());
 }
 
 function renderFilterSectorChips() {
   document.getElementById('filterSectors').innerHTML = SECTORS.map(function (s) {
-    const on = FILTER.sectors.indexOf(s[0]) !== -1;
+    var on = FILTER.sectors.indexOf(s[0]) !== -1;
     return '<label class="chip"><input type="checkbox" value="' + s[0] + '"' + (on ? ' checked' : '') + '>' +
       '<span>' + s[1] + ' ' + s[0] + '</span></label>';
   }).join('');
@@ -56,6 +54,8 @@ function applyProfileToFilter(city, sectors) {
   return true;
 }
 
+function closeFilterPanel() { document.getElementById('filterPanel').classList.add('hidden'); }
+
 function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
@@ -63,17 +63,17 @@ function initFilterUI() {
   applyJobTypeUI();
   updateFilterSummary();
 
+  // формат (рядом/вахта) внутри панели — меняет только UI панели, применяется по «Показать»
   document.querySelectorAll('input[name="jobType"]').forEach(function (input) {
     input.addEventListener('change', function () {
       haptic('light');
       FILTER.jobType = input.value;
-      saveFilter();
       applyJobTypeUI();
-      loadDeck();
     });
   });
 
-  document.getElementById('filterToggle').addEventListener('click', function () {
+  document.getElementById('filterBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
     haptic('light');
     document.getElementById('filterPanel').classList.toggle('hidden');
   });
@@ -84,20 +84,23 @@ function initFilterUI() {
       .call(document.querySelectorAll('#filterSectors input:checked'))
       .map(function (i) { return i.value; });
     FILTER.noExperience = document.getElementById('filterNoExp').checked;
+    var jt = document.querySelector('input[name="jobType"]:checked');
+    FILTER.jobType = (jt && jt.value === 'вахта') ? 'вахта' : 'рядом';
     saveFilter();
     updateFilterSummary();
-    document.getElementById('filterPanel').classList.add('hidden');
+    closeFilterPanel();
     loadDeck();
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');
-    FILTER = { city: '', sectors: [], noExperience: false, jobType: FILTER.jobType };
+    FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом' };
     saveFilter();
     document.getElementById('filterCity').value = '';
     document.getElementById('filterNoExp').checked = false;
+    applyJobTypeUI();
     renderFilterSectorChips();
     updateFilterSummary();
-    document.getElementById('filterPanel').classList.add('hidden');
+    closeFilterPanel();
     loadDeck();
   });
 }
@@ -105,7 +108,6 @@ function initFilterUI() {
 // ================= СВАЙП-ЛЕНТА =================
 var DECK = [];
 var DECK_INDEX = 0;
-var deckLiked = false; // раскрыт ли контакт на текущей карточке
 
 async function loadDeck() {
   const wrap = document.getElementById('deckWrap');
@@ -127,65 +129,66 @@ async function loadDeck() {
 
 function renderCard() {
   const wrap = document.getElementById('deckWrap');
-  deckLiked = false;
   if (DECK_INDEX >= DECK.length) {
     wrap.innerHTML = DECK.length === 0 && filterIsActive()
-      ? '<div class="empty">Под фильтр ничего не нашлось — измените город или направление ⚙</div>'
+      ? '<div class="empty">Под фильтр ничего не нашлось — измените город или направление в фильтре</div>'
       : '<div class="empty">Пока вакансий больше нет — загляните позже 👋</div>';
     document.getElementById('deckActions').classList.add('hidden');
     return;
   }
   document.getElementById('deckActions').classList.remove('hidden');
   const v = DECK[DECK_INDEX];
+
+  // на карточке — только «сигнальные» бейджи, которых нет в тексте поста
+  const badges = [
+    v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая</span>' : '',
+    v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '',
+    v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '',
+  ].filter(Boolean).join('');
+
   wrap.innerHTML =
     '<div class="card" id="activeCard">' +
       '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
-      '<div class="swipe-tag skip" id="tagSkip">СКИП</div>' +
-      '<div class="card-badges">' +
-        (v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая вакансия</span>' : '') +
-        (v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '') +
-        (v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '') +
-        (v.city ? '<span class="badge">' + escapeHtml(v.city) + '</span>' : '') +
-        (v.salary_text ? '<span class="badge">' + escapeHtml(v.salary_text) + '</span>' : '') +
-      '</div>' +
-      '<h2>' + escapeHtml(v.position || '(без названия)') + '</h2>' +
-      (v.company ? '<div class="card-company">' + escapeHtml(v.company) + '</div>' : '') +
-      '<div class="card-body">' + escapeHtml(v.clean_text || '') + '</div>' +
-      '<div class="card-contact" id="cardContact">' +
-        (telHref(v.phone)
-          ? '<a href="tel:' + escapeHtml(telHref(v.phone)) + '">📞 ' + escapeHtml(v.phone) + ' — позвонить</a>'
-          : '<div>📞 ' + escapeHtml(v.phone || 'контакт в тексте выше') + '</div>') +
-      '</div>' +
+      '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
+      (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
+      '<div class="card-body">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
 }
 
+// направленный жест: горизонталь → свайп карточки, вертикаль → отдаём
+// нативному скроллу текста поста. Ось определяется по первым ~8px движения.
 function bindCardGestures(card) {
-  let startX = 0, startY = 0, dx = 0, dragging = false, startTime = 0;
+  let startX = 0, startY = 0, dx = 0, startTime = 0, axis = null, active = false;
 
   card.addEventListener('pointerdown', function (e) {
-    if (deckLiked) return; // после лайка не даём утащить карточку, ждём "Дальше"
-    dragging = true; startX = e.clientX; startY = e.clientY; startTime = Date.now();
-    card.setPointerCapture(e.pointerId);
+    active = true; axis = null; dx = 0;
+    startX = e.clientX; startY = e.clientY; startTime = Date.now();
   });
+
   card.addEventListener('pointermove', function (e) {
-    if (!dragging) return;
-    dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    card.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (dx / 18) + 'deg)';
-    document.getElementById('tagLike').style.opacity = Math.max(0, dx / 100);
-    document.getElementById('tagSkip').style.opacity = Math.max(0, -dx / 100);
+    if (!active) return;
+    const mx = e.clientX - startX, my = e.clientY - startY;
+    if (axis === null) {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      if (Math.abs(my) > Math.abs(mx)) { active = false; return; } // вертикаль — скролл текста
+      axis = 'x';
+      try { card.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    dx = mx;
+    card.style.transform = 'translate(' + dx + 'px,0) rotate(' + (dx / 20) + 'deg)';
+    document.getElementById('tagLike').style.opacity = Math.max(0, dx / 90);
+    document.getElementById('tagSkip').style.opacity = Math.max(0, -dx / 90);
   });
-  card.addEventListener('pointerup', function () {
-    if (!dragging) return;
-    dragging = false;
+
+  function release() {
+    if (axis !== 'x') { active = false; axis = null; return; }
+    active = false; axis = null;
     const elapsed = Math.max(1, Date.now() - startTime);
     const velocity = Math.abs(dx) / elapsed; // px/мс
     // засчитываем и медленный осознанный драг (по расстоянию), и короткий
-    // быстрый флик пальцем (по скорости) — иначе обычный флик "как в
-    // Тиндере" не дотягивает до порога по одной лишь дистанции и его
-    // приходится повторять несколько раз
-    const isSwipe = Math.abs(dx) > 90 || (Math.abs(dx) > 24 && velocity > 0.35);
+    // быстрый флик пальцем (по скорости)
+    const isSwipe = Math.abs(dx) > 90 || (Math.abs(dx) > 36 && velocity > 0.35);
     if (isSwipe) {
       finishSwipe(dx > 0 ? 'like' : 'skip', card, dx);
     } else {
@@ -196,7 +199,9 @@ function bindCardGestures(card) {
       document.getElementById('tagSkip').style.opacity = 0;
     }
     dx = 0;
-  });
+  }
+  card.addEventListener('pointerup', release);
+  card.addEventListener('pointercancel', release);
 }
 
 function finishSwipe(decision, card, dxAtRelease) {
@@ -207,29 +212,17 @@ function finishSwipe(decision, card, dxAtRelease) {
     vacancyId: v.id, sector: v.sector, decision: decision,
   }).catch(function () {});
 
-  if (decision === 'skip') {
-    const flyX = (dxAtRelease >= 0 ? 1 : -1) * 600;
-    card.style.transition = 'transform .25s ease-out';
-    card.style.transform = 'translate(' + flyX + 'px, 0) rotate(' + (flyX / 18) + 'deg)';
-    setTimeout(function () { DECK_INDEX++; renderCard(); }, 220);
-    return;
+  if (decision === 'like') {
+    flashFavHeart();
+    var cur = parseInt(document.getElementById('favCount').textContent, 10) || 0;
+    setFavCount(cur + 1);
   }
 
-  // like — раскрываем контакт на месте, не перелистываем сразу
-  deckLiked = true;
-  card.style.transition = 'transform .2s';
-  card.style.transform = '';
-  document.getElementById('cardContact').classList.add('show');
-  document.getElementById('tagLike').style.opacity = 1;
-  document.getElementById('skipBtn').classList.add('hidden');
-  document.getElementById('likeBtn').textContent = 'Дальше →';
-  document.getElementById('likeBtn').onclick = function () {
-    document.getElementById('likeBtn').textContent = '♥ Нравится';
-    document.getElementById('likeBtn').onclick = null;
-    document.getElementById('skipBtn').classList.remove('hidden');
-    bindDeckButtons();
-    DECK_INDEX++; renderCard();
-  };
+  // и лайк, и скип — карточка улетает и сразу следующая (без промежуточного шага)
+  const flyX = (dxAtRelease && dxAtRelease < 0 ? -1 : (dxAtRelease > 0 ? 1 : (decision === 'like' ? 1 : -1))) * 640;
+  card.style.transition = 'transform .26s ease-out';
+  card.style.transform = 'translate(' + flyX + 'px,0) rotate(' + (flyX / 20) + 'deg)';
+  setTimeout(function () { DECK_INDEX++; renderCard(); }, 240);
 }
 
 function bindDeckButtons() {

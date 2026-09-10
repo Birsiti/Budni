@@ -1,23 +1,43 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
+   изменено 2026-09-10 17:05
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
-/* фикс. нижняя панель «Разместить вакансию» перекрывает контент —
-   нужен запас снизу больше базового из theme.css */
-body{ padding-bottom:max(100px, calc(40px + var(--safe-bottom))); }
+/* запас снизу нужен только на вкладке «Разместить» (фикс. .submit-bar) —
+   на ленте лишний отступ уводил кнопки свайпа под нижний край экрана */
+#viewPost{ padding-bottom:max(96px, calc(76px + var(--safe-bottom))); }
 
-/* шапка липкая и с фоном — чтобы строку с ☀️ не перекрывало и не терялось
+/* шапка липкая и с фоном — чтобы строку иконок не перекрывало и не терялось
    при прокрутке (частая жалоба в Telegram WebApp) */
 .topbar{
   padding:8px 16px 12px; position:sticky; top:0; z-index:20;
   background:var(--bg);
 }
-.topbar-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:40px; margin-bottom:12px; }
-.topbar-head h1{ font-size:18px; font-weight:700; margin:0; }
-.topbar-head .icon-btn-round{ width:40px; height:40px; }
-.topbar-head .icon-btn-round svg{ width:20px; height:20px; }
+.topbar-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:40px; margin-bottom:12px; }
+.topbar-head h1{ font-size:18px; font-weight:700; margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.topbar-actions{ display:flex; align-items:center; gap:8px; flex:none; }
 .topbar .tab{ font-size:13px; }
+
+/* бейдж-счётчик (сердечко «Избранное») и точка (активный фильтр) на иконках */
+.icon-btn-round{ position:relative; }
+.icon-badge{
+  position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px;
+  border-radius:9px; background:var(--accent); color:#fff; border:2px solid var(--bg);
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.icon-dot{
+  position:absolute; top:-2px; right:-2px; width:9px; height:9px; border-radius:50%;
+  background:var(--accent); border:2px solid var(--bg);
+}
+#favBtn.is-open{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+#favBtn.flash{ animation:favFlash .6s ease; }
+@keyframes favFlash{
+  0%{ transform:scale(1); }
+  30%{ transform:scale(1.18); color:var(--danger); border-color:var(--danger); }
+  100%{ transform:scale(1); }
+}
 
 /* ---------- подсказка «заполните анкету» над лентой ---------- */
 .deck-nudge{
@@ -35,20 +55,16 @@ body{ padding-bottom:max(100px, calc(40px + var(--safe-bottom))); }
   background:transparent; color:var(--accent); font-size:13px;
 }
 
-/* ---------- фильтр ленты ---------- */
-.filter-bar{ margin-bottom:10px; }
-.filter-toggle{
-  width:100%; min-height:44px; border-radius:var(--radius-sm);
-  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);
-  font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:13px;
-  display:flex; align-items:center; justify-content:center; gap:6px;
-}
-.filter-toggle.is-active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
-.filter-toggle .summary{ font-family:'Inter',sans-serif; font-weight:500; }
+/* ---------- фильтр ленты (панель открывается иконкой в шапке) ---------- */
 .filter-panel{
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-  padding:14px; margin-bottom:12px;
+  padding:14px; margin:2px 0 12px;
 }
+.filter-panel .field:last-of-type{ margin-bottom:10px; }
+/* пока панель фильтра открыта — прячем ленту и кнопки свайпа под ней */
+.filter-panel:not(.hidden) ~ .deck-wrap,
+.filter-panel:not(.hidden) ~ .deck-actions,
+.filter-panel:not(.hidden) ~ .deck-nudge{ display:none; }
 .filter-actions{ display:flex; gap:10px; margin-top:4px; }
 .filter-actions button{
   flex:1; min-height:44px; border-radius:var(--radius-sm); border:none;
@@ -57,37 +73,41 @@ body{ padding-bottom:max(100px, calc(40px + var(--safe-bottom))); }
 .filter-actions .reset{ background:var(--surface-2); color:var(--ink-soft); }
 .filter-actions .apply{ background:var(--accent); color:#fff; }
 
-/* ---------- свайп-карточка ---------- */
-.deck-wrap{ position:relative; min-height:420px; }
+/* ---------- свайп-лента: колонка на всю высоту, кнопки не у самого края ---------- */
+#viewDeck{
+  display:flex; flex-direction:column;
+  min-height:calc(100vh - 150px);
+  min-height:calc(100dvh - 150px);
+}
+.deck-wrap{ position:relative; flex:1; min-height:320px; overflow:hidden; }
 .card{
   position:absolute; inset:0;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
   padding:18px; display:flex; flex-direction:column;
-  touch-action:none; user-select:none; cursor:grab;
+  touch-action:pan-y; user-select:none; cursor:grab;
   will-change:transform;
 }
-.card-badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-.card h2{ font-size:18px; margin:0 0 4px; font-family:'Chakra Petch',sans-serif; }
-.card-company{ color:var(--ink-soft); font-size:13px; margin-bottom:10px; }
+.card-badges{ display:flex; gap:6px; flex-wrap:wrap; }
 .card-body{
-  flex:1; overflow-y:auto; white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink);
-  border-top:1px solid var(--line); padding-top:10px;
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink); padding-top:2px;
 }
-.card-contact{
-  margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
-  background:var(--ok-soft); border-radius:var(--radius-sm); padding:10px; display:none;
+.card-badges + .card-body{
+  border-top:1px solid var(--line); margin-top:10px; padding-top:10px;
 }
-.card-contact.show{ display:block; }
-.card-contact div{ font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--ok); }
 
 .swipe-tag{
-  position:absolute; top:16px; font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:18px;
-  padding:4px 12px; border-radius:8px; border:2px solid; opacity:0; transform:rotate(-12deg);
+  position:absolute; top:18px; z-index:2;
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:16px;
+  padding:4px 12px; border-radius:8px; border:2px solid; opacity:0;
 }
-.swipe-tag.like{ right:16px; color:var(--ok); border-color:var(--ok); }
-.swipe-tag.skip{ left:16px; color:var(--danger); border-color:var(--danger); transform:rotate(12deg); }
+.swipe-tag.like{ left:16px; color:var(--ok); border-color:var(--ok); transform:rotate(-12deg); }
+.swipe-tag.skip{ right:16px; color:var(--danger); border-color:var(--danger); transform:rotate(12deg); }
 
-.deck-actions{ display:flex; gap:12px; margin-top:14px; }
+.deck-actions{
+  flex:none; display:flex; gap:12px;
+  margin-top:12px; padding-bottom:calc(14px + var(--safe-bottom));
+}
 .round-btn{
   flex:1; min-height:52px; border-radius:var(--radius); border:none;
   font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px;
@@ -95,9 +115,8 @@ body{ padding-bottom:max(100px, calc(40px + var(--safe-bottom))); }
 }
 .round-btn.skip{ background:var(--danger-soft); color:var(--danger); }
 .round-btn.like{ background:var(--ok-soft); color:var(--ok); }
-.round-btn.next{ background:var(--accent); color:#fff; }
 
-.deck-wrap .empty{ padding:64px 16px; }
+.deck-wrap .empty{ padding:56px 16px; }
 
 /* ---------- избранное (список) ---------- */
 .fav-card{
