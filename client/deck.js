@@ -1,9 +1,9 @@
-// изменено 2026-09-10 17:05
+// изменено 2026-09-13 12:00
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
 // открывается кнопкой-иконкой в шапке (#filterBtn).
-// Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
+// Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS, shareText.
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
@@ -150,10 +150,26 @@ function renderCard() {
     '<div class="card" id="activeCard">' +
       '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
+      '<button class="card-share-btn" id="cardShareBtn" aria-label="Поделиться">↗</button>' +
       (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
       '<div class="card-body">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
+  bindCardShare(v);
+}
+
+// «↗» на самой карточке — поделиться вакансией прямо из ленты, не дожидаясь
+// лайка/избранного (в отличие от favorites.js, где «Поделиться» только после лайка).
+function bindCardShare(v) {
+  const btn = document.getElementById('cardShareBtn');
+  if (!btn) return;
+  // stopPropagation, чтобы тап по кнопке не запускал свайп-жест карточки под ней
+  btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    haptic('light');
+    shareText(v.clean_text || v.position || '');
+  });
 }
 
 // направленный жест: горизонталь → свайп карточки, вертикаль → отдаём

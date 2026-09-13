@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-10 17:05 -->
+<!-- изменено 2026-09-13 12:00 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -43,12 +43,6 @@
         </svg>
         <span class="icon-dot hidden" id="filterDot"></span>
       </button>
-      <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
-        </svg>
-      </button>
     </div>
   </div>
   <div class="tabs">
@@ -56,7 +50,6 @@
     <button class="tab" data-tab="profile">Анкета <span class="dot hidden" id="profileDot"></span></button>
     <button class="tab" data-tab="post">Разместить</button>
   </div>
-  <div class="settings-pop hidden" id="settingsPop"></div>
 </div>
 
 <div class="content">
@@ -92,6 +85,15 @@
       <span class="deck-nudge-t">Заполните анкету — подстроим ленту под вас</span>
       <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
       <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
+    </div>
+    <div class="deck-toolbar" id="deckToolbar">
+      <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+      </button>
+      <div class="settings-pop hidden" id="settingsPop"></div>
     </div>
     <div class="deck-wrap" id="deckWrap"></div>
     <div class="deck-actions" id="deckActions">

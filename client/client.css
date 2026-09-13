@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-10 17:05
+   изменено 2026-09-13 12:00
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -63,8 +63,14 @@
 .filter-panel .field:last-of-type{ margin-bottom:10px; }
 /* пока панель фильтра открыта — прячем ленту и кнопки свайпа под ней */
 .filter-panel:not(.hidden) ~ .deck-wrap,
+.filter-panel:not(.hidden) ~ .deck-toolbar,
 .filter-panel:not(.hidden) ~ .deck-actions,
 .filter-panel:not(.hidden) ~ .deck-nudge{ display:none; }
+
+/* ---------- настройки над лентой (были иконкой в шапке, перенесены сюда
+   по правке Дениса — ближе к самой карточке) ---------- */
+.deck-toolbar{ position:relative; display:flex; justify-content:flex-end; margin-bottom:8px; }
+.deck-toolbar .settings-pop{ top:46px; right:0; }
 .filter-actions{ display:flex; gap:10px; margin-top:4px; }
 .filter-actions button{
   flex:1; min-height:44px; border-radius:var(--radius-sm); border:none;
@@ -87,7 +93,12 @@
   touch-action:pan-y; user-select:none; cursor:grab;
   will-change:transform;
 }
-.card-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+.card-share-btn{
+  position:absolute; top:12px; right:12px; z-index:3;
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink-soft); font-size:15px; line-height:1;
+}
+.card-badges{ display:flex; gap:6px; flex-wrap:wrap; padding-right:38px; }
 .card-body{
   flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
   white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink); padding-top:2px;
