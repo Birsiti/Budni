@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-14 17:45 -->
+<!-- изменено 2026-09-14 18:00 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="../theme.css?v=20260914">
-<link rel="stylesheet" href="admin.css?v=20260914b">
+<link rel="stylesheet" href="admin.css?v=20260914c">
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
@@ -89,10 +89,19 @@
   </div>
 </div>
 
+<div class="sheet-backdrop" id="citySheetBackdrop"></div>
+<div class="sheet" id="citySheet">
+  <div class="sheet-head">
+    <div class="sheet-title" id="citySheetTitle">Город</div>
+    <button type="button" class="sheet-close" id="citySheetClose" aria-label="Закрыть">✕</button>
+  </div>
+  <div id="citySheetBody"><div class="empty">Загрузка…</div></div>
+</div>
+
 <script src="../app.js?v=20260914"></script>
 <script src="../settings.js?v=20260914"></script>
 <script src="admin-core.js?v=20260914"></script>
-<script src="admin-dashboard.js?v=20260914b"></script>
+<script src="admin-dashboard.js?v=20260914c"></script>
 <script>dashboardBoot();</script>
 </body>
 </html>

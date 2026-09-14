@@ -1,4 +1,4 @@
-/* изменено 2026-09-14 17:45 */
+/* изменено 2026-09-14 18:00 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -95,6 +95,34 @@ body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
 .brow-sub{ padding:8px 0; border-bottom:1px solid var(--line); }
 .brow-sub:last-child{ border-bottom:none; }
 .brow-sub .brow-top{ font-size:13px; color:var(--ink-soft); }
+
+/* строка города, кликабельная — открывает шторку со списком вакансий */
+.brow-city{ cursor:pointer; margin:0 -4px; padding-left:4px; padding-right:4px; border-radius:8px; }
+.brow-city:active{ background:var(--surface-2); }
+
+/* ---------- шторка (список вакансий по городу) ---------- */
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40;
+  opacity:0; visibility:hidden; transition:opacity .2s;
+}
+.sheet-backdrop.open{ opacity:1; visibility:visible; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:41;
+  background:var(--surface); border-radius:16px 16px 0 0;
+  max-height:80vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:14px 16px calc(16px + var(--safe-bottom));
+  transform:translateY(110%); opacity:0; visibility:hidden;
+  transition:transform .25s, opacity .25s;
+}
+.sheet.open{ transform:translateY(0); opacity:1; visibility:visible; }
+.sheet-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.sheet-title{ font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:16px; }
+.sheet-close{
+  width:44px; height:44px; border-radius:50%; background:var(--surface-2); border:none;
+  color:var(--ink-soft); font-size:18px; flex:none;
+}
+.sheet .qcard{ margin-bottom:8px; }
+.sheet .qcard:last-child{ margin-bottom:0; }
 
 /* навигация в разделы */
 .nav-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 6px; }

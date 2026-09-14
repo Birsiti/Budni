@@ -1,4 +1,4 @@
-// изменено 2026-09-14 17:45
+// изменено 2026-09-14 18:00
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -285,14 +285,17 @@ function cityRows(obj) {
 
   return keys.map(function (k) {
     if (k !== 'Минский район') {
-      return '<div class="brow"><div class="brow-top"><span>' + escapeHtml(k) + '</span>' +
+      const clickable = k !== '(без города)';   // не город — фильтровать нечем
+      return '<div class="brow' + (clickable ? ' brow-city' : '') + '"' +
+          (clickable ? ' data-city="' + escapeHtml(k) + '"' : '') + '>' +
+        '<div class="brow-top"><span>' + escapeHtml(k) + '</span>' +
         '<span class="brow-num mono">' + combined[k] + '</span></div>' +
         '<div class="bar"><i style="width:' + Math.round(combined[k] / max * 100) + '%"></i></div></div>';
     }
     const subKeys = raionKeys.sort(function (a, b) { return raion[b] - raion[a]; });
     const subMax = raion[subKeys[0]] || 1;
     const subRows = subKeys.map(function (sk) {
-      return '<div class="brow-sub"><div class="brow-top"><span>' + escapeHtml(sk) + '</span>' +
+      return '<div class="brow-sub brow-city" data-city="' + escapeHtml(sk) + '"><div class="brow-top"><span>' + escapeHtml(sk) + '</span>' +
         '<span class="brow-num mono">' + raion[sk] + '</span></div>' +
         '<div class="bar"><i style="width:' + Math.round(raion[sk] / subMax * 100) + '%"></i></div></div>';
     }).join('');
@@ -396,8 +399,50 @@ async function loadSourcesInto() {
   if (pending) { badge.textContent = pending; badge.classList.remove('hidden'); }
 }
 
+// ---------- шторка «вакансии этого города» ----------
+async function openCitySheet(city) {
+  const backdrop = document.getElementById('citySheetBackdrop');
+  const sheet = document.getElementById('citySheet');
+  const body = document.getElementById('citySheetBody');
+  document.getElementById('citySheetTitle').textContent = city;
+  body.innerHTML = '<div class="empty">Загрузка…</div>';
+  backdrop.classList.add('open');
+  sheet.classList.add('open');
+  if (tg && tg.BackButton) {
+    try { tg.BackButton.onClick(closeCitySheet); tg.BackButton.show(); } catch (e) {}
+  }
+  haptic('light');
+
+  const res = await apiPost({ action: 'vacancies_by_city', city: city });
+  if (!sheet.classList.contains('open')) return;   // успели закрыть, пока ждали ответ
+  if (!res.ok) { body.innerHTML = '<div class="empty">Ошибка: ' + escapeHtml(res.error || 'нет связи') + '</div>'; return; }
+  const list = res.vacancies || [];
+  if (!list.length) { body.innerHTML = '<div class="empty">Вакансий нет</div>'; return; }
+  body.innerHTML = list.map(function (v) {
+    const meta = [v.company, v.salary_text].filter(Boolean).join(' · ');
+    return '<div class="qcard">' +
+      '<div class="qtop"><div><div class="qpos">' + escapeHtml(v.position || '(без должности)') + '</div>' +
+        (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') + '</div>' +
+        (v.suspicious ? '<span class="badge badge-viber">⚠️</span>' : '') + '</div>' +
+      (v.channel ? '<div class="qmeta2"><span class="badge">' + escapeHtml(v.channel) + '</span>' +
+        (v.source === 'employer' ? '<span class="badge badge-employer">прямая</span>' : '') + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function closeCitySheet() {
+  document.getElementById('citySheetBackdrop').classList.remove('open');
+  document.getElementById('citySheet').classList.remove('open');
+  if (tg && tg.BackButton) { try { tg.BackButton.hide(); } catch (e) {} }
+}
+
+document.getElementById('citySheetBackdrop').addEventListener('click', closeCitySheet);
+document.getElementById('citySheetClose').addEventListener('click', closeCitySheet);
+
 // ---------- делегирование кликов внутри #view ----------
 document.getElementById('view').addEventListener('click', function (e) {
+  const cityRow = e.target.closest('.brow-city');
+  if (cityRow) { openCitySheet(cityRow.dataset.city); return; }
   const grp = e.target.closest('.brow-toggle');
   if (grp) {
     const tail = grp.parentElement.querySelector('.list-tail');
