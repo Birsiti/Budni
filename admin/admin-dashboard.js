@@ -1,4 +1,4 @@
-// изменено 2026-09-14 18:00
+// изменено 2026-09-14 18:15
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -418,14 +418,15 @@ async function openCitySheet(city) {
   if (!res.ok) { body.innerHTML = '<div class="empty">Ошибка: ' + escapeHtml(res.error || 'нет связи') + '</div>'; return; }
   const list = res.vacancies || [];
   if (!list.length) { body.innerHTML = '<div class="empty">Вакансий нет</div>'; return; }
-  body.innerHTML = list.map(function (v) {
+  body.innerHTML = list.map(function (v, i) {
     const meta = [v.company, v.salary_text].filter(Boolean).join(' · ');
-    return '<div class="qcard">' +
+    return '<div class="qcard qcard-open" data-i="' + i + '">' +
       '<div class="qtop"><div><div class="qpos">' + escapeHtml(v.position || '(без должности)') + '</div>' +
         (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') + '</div>' +
         (v.suspicious ? '<span class="badge badge-viber">⚠️</span>' : '') + '</div>' +
       (v.channel ? '<div class="qmeta2"><span class="badge">' + escapeHtml(v.channel) + '</span>' +
         (v.source === 'employer' ? '<span class="badge badge-employer">прямая</span>' : '') + '</div>' : '') +
+      '<div class="qdetail" id="csd-' + i + '"><div class="rv-text">' + escapeHtml(v.clean_text || '(нет текста)') + '</div></div>' +
     '</div>';
   }).join('');
 }
@@ -438,6 +439,14 @@ function closeCitySheet() {
 
 document.getElementById('citySheetBackdrop').addEventListener('click', closeCitySheet);
 document.getElementById('citySheetClose').addEventListener('click', closeCitySheet);
+document.getElementById('citySheetBody').addEventListener('click', function (e) {
+  const card = e.target.closest('.qcard-open');
+  if (!card) return;
+  const detail = document.getElementById('csd-' + card.dataset.i);
+  if (!detail) return;
+  detail.classList.toggle('open');
+  haptic('light');
+});
 
 // ---------- делегирование кликов внутри #view ----------
 document.getElementById('view').addEventListener('click', function (e) {
