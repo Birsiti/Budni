@@ -1,4 +1,4 @@
-// изменено 2026-09-09 22:55
+// изменено 2026-09-14 16:50
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -54,7 +54,7 @@ async function loadDashboard() {
 
   const s = D.stats;
   setNum('stVac', totalOf(s.bySector));
-  setNum('stQueue', s.queueLength || 0);
+  setNum('stNew', s.newToday || 0);
   setNum('navQueue', s.queueLength || 0);
 
   const rev = (main.suspicious || []).length;
@@ -151,6 +151,7 @@ function chartCard() {
     '<div class="card chart-card">' +
       '<div class="seg" id="chartMetric">' +
         '<button type="button" data-m="publications"' + (m === 'publications' ? ' class="is-on"' : '') + '>Публикации</button>' +
+        '<button type="button" data-m="new"' + (m === 'new' ? ' class="is-on"' : '') + '>Новые</button>' +
         '<button type="button" data-m="swipes"' + (m === 'swipes' ? ' class="is-on"' : '') + '>Свайпы</button>' +
       '</div>' +
       '<div class="seg seg-sm" id="chartPeriod">' +
