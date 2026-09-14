@@ -1,4 +1,4 @@
-/* изменено 2026-09-09 22:55 */
+/* изменено 2026-09-14 17:45 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -84,6 +84,17 @@ body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
   border-top:1px solid var(--line); margin-top:6px; padding:10px 0 2px;
   color:var(--accent); font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:12px;
 }
+
+/* вложенная группа (напр. «Минский район», разворачивается в своём же ряду) */
+.brow-toggle{
+  display:block; width:100%; background:none; border:none; padding:10px 0;
+  border-bottom:1px solid var(--line); text-align:left; font:inherit; color:inherit;
+  -webkit-appearance:none; appearance:none;
+}
+.brow-group .list-tail{ padding-left:14px; }
+.brow-sub{ padding:8px 0; border-bottom:1px solid var(--line); }
+.brow-sub:last-child{ border-bottom:none; }
+.brow-sub .brow-top{ font-size:13px; color:var(--ink-soft); }
 
 /* навигация в разделы */
 .nav-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 6px; }

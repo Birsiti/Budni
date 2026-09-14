@@ -1,4 +1,4 @@
-// изменено 2026-09-14 16:50
+// изменено 2026-09-14 17:45
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -14,6 +14,14 @@ var RATE_OPTIONS = [1, 2, 3, 5, 8, 12];
 var LIMIT_OPTIONS = [0, 30, 50, 100, 200, 400];
 var CHART_PERIODS = [['day', '7 дней'], ['week', '4 недели'], ['month', '6 месяцев']];
 var TOP_N = 5;   // строк списка видно до раскрытия
+
+// отдельные населённые пункты Минского района (НЕ районы самого Минска —
+// те уже свёрнуты на бэкенде в "#Минск 📍район", см. api.format.MINSK_DISTRICTS).
+// Список сверен с Денисом 2026-09-14, дополнять по мере находок.
+var MINSK_RAION = ['Колодищи', 'Боровляны', 'Мачулищи', 'Озерцо', 'Валерьяново',
+  'Ждановичи', 'Привольный', 'Королёв Стан', 'Большой Тростенец', 'Михановичи',
+  'Острошицкий Городок', 'Ратомка', 'Большевик', 'Лесковка', 'Сеница',
+  'Крупица', 'Прилесье', 'Тарасово'];
 
 var D = {};                 // состояние экрана
 var _paused = false;        // публикация на паузе
@@ -129,7 +137,7 @@ function renderBody() {
     '<div class="section-title">По каналам</div>' +
     collapsibleCard('channels', breakdownRows(s.byChannel)) +
     '<div class="section-title">По городам</div>' +
-    collapsibleCard('cities', breakdownRows(s.byCity)) +
+    collapsibleCard('cities', cityRows(s.byCity)) +
     rateControl() +
     '<button class="btn btn-approve wide-btn" id="enqueueAllBtn">Залить весь бэклог в очередь</button>';
 
@@ -257,6 +265,49 @@ function breakdownRows(obj) {
   });
 }
 
+// как breakdownRows, но отдельные посёлки Минского района сворачивает в
+// одну строку-группу «Минский район» — сама раскрывается по тапу, показывая
+// разбивку внутри (см. обработчик .brow-toggle в делегировании кликов ниже).
+function cityRows(obj) {
+  obj = obj || {};
+  const raion = {}, rest = {};
+  Object.keys(obj).forEach(function (k) {
+    (MINSK_RAION.indexOf(k) !== -1 ? raion : rest)[k] = obj[k];
+  });
+  const raionKeys = Object.keys(raion);
+  const raionTotal = raionKeys.reduce(function (a, k) { return a + raion[k]; }, 0);
+  const combined = Object.assign({}, rest);
+  if (raionTotal) combined['Минский район'] = raionTotal;
+
+  const keys = Object.keys(combined).sort(function (a, b) { return combined[b] - combined[a]; });
+  if (!keys.length) return [];
+  const max = combined[keys[0]] || 1;
+
+  return keys.map(function (k) {
+    if (k !== 'Минский район') {
+      return '<div class="brow"><div class="brow-top"><span>' + escapeHtml(k) + '</span>' +
+        '<span class="brow-num mono">' + combined[k] + '</span></div>' +
+        '<div class="bar"><i style="width:' + Math.round(combined[k] / max * 100) + '%"></i></div></div>';
+    }
+    const subKeys = raionKeys.sort(function (a, b) { return raion[b] - raion[a]; });
+    const subMax = raion[subKeys[0]] || 1;
+    const subRows = subKeys.map(function (sk) {
+      return '<div class="brow-sub"><div class="brow-top"><span>' + escapeHtml(sk) + '</span>' +
+        '<span class="brow-num mono">' + raion[sk] + '</span></div>' +
+        '<div class="bar"><i style="width:' + Math.round(raion[sk] / subMax * 100) + '%"></i></div></div>';
+    }).join('');
+    const open = lsGet('budni_exp_cities_raion') === '1';
+    return '<div class="brow-group">' +
+      '<button type="button" class="brow-toggle" data-exp-group="cities_raion">' +
+        '<div class="brow-top"><span>' + (open ? '▾' : '▸') + ' Минский район</span>' +
+        '<span class="brow-num mono">' + raionTotal + '</span></div>' +
+        '<div class="bar"><i style="width:' + Math.round(raionTotal / max * 100) + '%"></i></div>' +
+      '</button>' +
+      '<div class="list-tail' + (open ? '' : ' hidden') + '">' + subRows + '</div>' +
+    '</div>';
+  });
+}
+
 function rateControl() {
   const b = D.publishBatch, lim = D.publishDailyLimit;
   const rate = RATE_OPTIONS.map(function (n) {
@@ -347,6 +398,18 @@ async function loadSourcesInto() {
 
 // ---------- делегирование кликов внутри #view ----------
 document.getElementById('view').addEventListener('click', function (e) {
+  const grp = e.target.closest('.brow-toggle');
+  if (grp) {
+    const tail = grp.parentElement.querySelector('.list-tail');
+    if (!tail) return;
+    const willOpen = tail.classList.contains('hidden');
+    tail.classList.toggle('hidden', !willOpen);
+    const label = grp.querySelector('.brow-top span:first-child');
+    if (label) label.textContent = (willOpen ? '▾' : '▸') + label.textContent.slice(1);
+    lsSet('budni_exp_' + grp.dataset.expGroup, willOpen ? '1' : '0');
+    haptic('light');
+    return;
+  }
   const more = e.target.closest('.list-more');
   if (more) {
     const tail = more.parentElement.querySelector('.list-tail');
