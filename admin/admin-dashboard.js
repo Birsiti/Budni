@@ -1,4 +1,4 @@
-// изменено 2026-09-14 18:15
+// изменено 2026-09-14 18:30
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -21,7 +21,22 @@ var TOP_N = 5;   // строк списка видно до раскрытия
 var MINSK_RAION = ['Колодищи', 'Боровляны', 'Мачулищи', 'Озерцо', 'Валерьяново',
   'Ждановичи', 'Привольный', 'Королёв Стан', 'Большой Тростенец', 'Михановичи',
   'Острошицкий Городок', 'Ратомка', 'Большевик', 'Лесковка', 'Сеница',
-  'Крупица', 'Прилесье', 'Тарасово'];
+  'Крупица', 'Прилесье', 'Тарасово', 'Луговая Слобода', 'Новая Боровая',
+  'Богатырево', 'Ярково', 'Семково', 'Юзуфово'];
+
+// города/посёлки России — сверено с Денисом 2026-09-14 (Подмосковье — тоже сюда).
+// "Королёв" (Моск. обл.) — не путать с "Королёв Стан" (Минский район) выше.
+var RF_CITIES = ['Москва', 'Санкт-петербург', 'Дмитров', 'Солнечногорск', 'Яхрома',
+  'Астрахань', 'Благовещенск', 'Гагарин', 'Домодедово', 'Дорохово', 'Кандалакша',
+  'Кимры', 'Королёв', 'Красногорск', 'Мурманск', 'Нижний Новгород', 'Подмосковье',
+  'Подольск', 'Ростов-на-дону', 'Чехов', 'Пересвет', 'Сосновый Бор', 'Коммунарка'];
+
+// именованные группы для сворачиваемого списка «По городам» (cityRows ниже) —
+// каждая своя раскрывающаяся строка, budni_exp_cities_<key> в localStorage.
+var CITY_GROUPS = [
+  { key: 'raion', name: 'Минский район', cities: MINSK_RAION },
+  { key: 'rf', name: 'РФ', cities: RF_CITIES },
+];
 
 var D = {};                 // состояние экрана
 var _paused = false;        // публикация на паузе
@@ -265,26 +280,37 @@ function breakdownRows(obj) {
   });
 }
 
-// как breakdownRows, но отдельные посёлки Минского района сворачивает в
-// одну строку-группу «Минский район» — сама раскрывается по тапу, показывая
-// разбивку внутри (см. обработчик .brow-toggle в делегировании кликов ниже).
+// как breakdownRows, но города из CITY_GROUPS (Минский район, РФ, ...)
+// сворачивает каждый в одну строку-группу — сама раскрывается по тапу,
+// показывая разбивку внутри (см. обработчик .brow-toggle в делегировании
+// кликов ниже). Город, не попавший ни в одну группу, — обычная строка.
 function cityRows(obj) {
   obj = obj || {};
-  const raion = {}, rest = {};
+  const rest = {};
+  const byGroup = {};   // key -> {city: count, ...}
   Object.keys(obj).forEach(function (k) {
-    (MINSK_RAION.indexOf(k) !== -1 ? raion : rest)[k] = obj[k];
+    const g = CITY_GROUPS.find(function (g) { return g.cities.indexOf(k) !== -1; });
+    if (!g) { rest[k] = obj[k]; return; }
+    (byGroup[g.key] || (byGroup[g.key] = {}))[k] = obj[k];
   });
-  const raionKeys = Object.keys(raion);
-  const raionTotal = raionKeys.reduce(function (a, k) { return a + raion[k]; }, 0);
+
   const combined = Object.assign({}, rest);
-  if (raionTotal) combined['Минский район'] = raionTotal;
+  const groupByLabel = {};   // "Минский район" -> {key, items}
+  CITY_GROUPS.forEach(function (g) {
+    const items = byGroup[g.key];
+    if (!items) return;
+    const total = Object.keys(items).reduce(function (a, k) { return a + items[k]; }, 0);
+    combined[g.name] = total;
+    groupByLabel[g.name] = { key: g.key, items: items };
+  });
 
   const keys = Object.keys(combined).sort(function (a, b) { return combined[b] - combined[a]; });
   if (!keys.length) return [];
   const max = combined[keys[0]] || 1;
 
   return keys.map(function (k) {
-    if (k !== 'Минский район') {
+    const grp = groupByLabel[k];
+    if (!grp) {
       const clickable = k !== '(без города)';   // не город — фильтровать нечем
       return '<div class="brow' + (clickable ? ' brow-city' : '') + '"' +
           (clickable ? ' data-city="' + escapeHtml(k) + '"' : '') + '>' +
@@ -292,19 +318,20 @@ function cityRows(obj) {
         '<span class="brow-num mono">' + combined[k] + '</span></div>' +
         '<div class="bar"><i style="width:' + Math.round(combined[k] / max * 100) + '%"></i></div></div>';
     }
-    const subKeys = raionKeys.sort(function (a, b) { return raion[b] - raion[a]; });
-    const subMax = raion[subKeys[0]] || 1;
+    const items = grp.items;
+    const subKeys = Object.keys(items).sort(function (a, b) { return items[b] - items[a]; });
+    const subMax = items[subKeys[0]] || 1;
     const subRows = subKeys.map(function (sk) {
       return '<div class="brow-sub brow-city" data-city="' + escapeHtml(sk) + '"><div class="brow-top"><span>' + escapeHtml(sk) + '</span>' +
-        '<span class="brow-num mono">' + raion[sk] + '</span></div>' +
-        '<div class="bar"><i style="width:' + Math.round(raion[sk] / subMax * 100) + '%"></i></div></div>';
+        '<span class="brow-num mono">' + items[sk] + '</span></div>' +
+        '<div class="bar"><i style="width:' + Math.round(items[sk] / subMax * 100) + '%"></i></div></div>';
     }).join('');
-    const open = lsGet('budni_exp_cities_raion') === '1';
+    const open = lsGet('budni_exp_cities_' + grp.key) === '1';
     return '<div class="brow-group">' +
-      '<button type="button" class="brow-toggle" data-exp-group="cities_raion">' +
-        '<div class="brow-top"><span>' + (open ? '▾' : '▸') + ' Минский район</span>' +
-        '<span class="brow-num mono">' + raionTotal + '</span></div>' +
-        '<div class="bar"><i style="width:' + Math.round(raionTotal / max * 100) + '%"></i></div>' +
+      '<button type="button" class="brow-toggle" data-exp-group="cities_' + grp.key + '">' +
+        '<div class="brow-top"><span>' + (open ? '▾' : '▸') + ' ' + escapeHtml(k) + '</span>' +
+        '<span class="brow-num mono">' + combined[k] + '</span></div>' +
+        '<div class="bar"><i style="width:' + Math.round(combined[k] / max * 100) + '%"></i></div>' +
       '</button>' +
       '<div class="list-tail' + (open ? '' : ' hidden') + '">' + subRows + '</div>' +
     '</div>';
