@@ -1,4 +1,4 @@
-// изменено 2026-09-15 15:30
+// изменено 2026-09-15 15:40
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -175,15 +175,15 @@ function fmtBirth(iso) {
   return m ? (+m[3]) + ' ' + RU_MONTHS_GEN[+m[2] - 1] + ' ' + m[1] : '';
 }
 
-// поделиться текстом через штатный share-лист Telegram — ссылка на бота
-// дописана прямо в текст. Параметр url= НЕ передаём: t.me/share/url сам
-// вставляет его отдельной строкой НАД текстом — с ним ссылка дублировалась
-// (сверху от url=, снизу от футера в text=). text=-only себя ведёт как
-// обычный шаринг текста, без дублирующей строки.
+// поделиться текстом через штатный share-лист Telegram. Ссылка на бота
+// идёт ТОЛЬКО через url= — сама превью-карточка сверху сообщения это
+// стандартное поведение Telegram для t.me-ссылки в тексте, от места в
+// строке не зависит (пробовали text=-only с футером внизу — ссылка
+// всё равно всплывала наверх, только вдобавок дублировалась). Свой футер
+// в text= не добавляем — иначе будет два упоминания ссылки на одно превью.
 function shareText(text) {
-  const footer = '\n\n👉 Все вакансии: https://t.me/Budni_BY_Bot';
-  const body = String(text || '').slice(0, 3500 - footer.length) + footer;
-  const url = 'https://t.me/share/url?text=' + encodeURIComponent(body);
+  const url = 'https://t.me/share/url?url=' + encodeURIComponent('https://t.me/Budni_BY_Bot') +
+    '&text=' + encodeURIComponent(String(text || '').slice(0, 3500));
   if (tg && tg.openTelegramLink) { try { tg.openTelegramLink(url); return; } catch (e) {} }
   window.open(url, '_blank');
 }
