@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 13:35
+   изменено 2026-09-15 14:00
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -21,6 +21,7 @@
 
 /* бейдж-счётчик (сердечко «Избранное») и точка (активный фильтр) на иконках */
 .icon-btn-round{ position:relative; }
+.icon-btn-emoji{ font-size:19px; line-height:1; }
 .icon-badge{
   position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px;
   border-radius:9px; background:var(--accent); color:#fff; border:2px solid var(--bg);
@@ -74,12 +75,24 @@
 .city-suggest-item:last-child{ border-bottom:none; }
 .city-suggest-item:active{ background:var(--surface-2); }
 
+/* ---------- пилюля-триггер фильтра, наверху ленты над карточкой ---------- */
+.filter-pill{
+  display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
+  min-height:44px; margin-bottom:10px; padding:0 14px;
+  background:var(--accent-soft); border:1px solid var(--accent); border-radius:999px;
+  font-family:'Chakra Petch',sans-serif; font-size:14px;
+}
+.filter-pill-ico{ font-size:16px; line-height:1; }
+.filter-pill-label{ color:var(--accent); font-weight:700; }
+.filter-pill-sum{ color:var(--accent); font-weight:500; opacity:.8; }
+.filter-pill-sum:not(:empty)::before{ content:'· '; }
+
 .filter-panel{
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
   padding:14px; margin:2px 0 12px;
 }
 .filter-panel .field:last-of-type{ margin-bottom:10px; }
-/* пока панель фильтра открыта — прячем ленту (с иконкой фильтра) и кнопки свайпа под ней */
+/* пока панель фильтра открыта — прячем ленту и кнопки свайпа под ней */
 .filter-panel:not(.hidden) ~ .deck-stage,
 .filter-panel:not(.hidden) ~ .deck-actions,
 .filter-panel:not(.hidden) ~ .deck-nudge{ display:none; }
@@ -99,17 +112,6 @@
 }
 .deck-stage{ position:relative; flex:1; min-height:320px; }
 .deck-wrap{ position:absolute; inset:0; overflow:hidden; }
-/* иконка-триггер фильтра — прямо на карточке (верх-право, там же где бейджи),
-   вне #deckWrap: тот перерисовывается innerHTML на каждый свайп и убил бы
-   обработчик клика (deck.js вешает его один раз на #filterPillBtn) */
-.card-settings-btn{
-  position:absolute; top:18px; right:18px; z-index:3;
-  width:34px; height:34px; border-radius:50%; flex:none;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);
-  display:flex; align-items:center; justify-content:center;
-}
-.card-settings-btn svg{ width:18px; height:18px; display:block; }
-.card-settings-btn:active{ background:var(--surface-3); }
 .card{
   position:absolute; inset:0;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
