@@ -1,3 +1,4 @@
+// изменено 2026-09-15 12:00
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -139,7 +140,11 @@ function formatPhoneTail(value) {
 
 // tel:-ссылка из телефона (для «позвонить» по тапу)
 function telHref(phone) {
-  const d = String(phone || '').replace(/[^\d+]/g, '');
+  // в поле может быть несколько номеров через ", " (db.pg.norm_phone) —
+  // на звонок берём только первый, иначе после чистки не-цифр они склеятся
+  // в один невалидный номер
+  const first = String(phone || '').split(',')[0];
+  const d = first.replace(/[^\d+]/g, '');
   if (d.replace(/\D/g, '').length < 6) return '';
   return d[0] === '+' ? d : '+' + d;
 }

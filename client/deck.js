@@ -1,8 +1,8 @@
-// изменено 2026-09-10 17:05
+// изменено 2026-09-15 12:00
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
-// открывается кнопкой-иконкой в шапке (#filterBtn).
+// открывается пилюлей-триггером наверху ленты (#filterPillBtn).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
@@ -26,9 +26,14 @@ function applyJobTypeUI() {
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
 
-// индикатор активного фильтра — точка на иконке фильтра в шапке
+// текст на пилюле-триггере фильтра, наверху ленты
 function updateFilterSummary() {
-  document.getElementById('filterDot').classList.toggle('hidden', !filterIsActive());
+  const parts = [];
+  if (FILTER.jobType === 'вахта') parts.push('Вахта');
+  if (FILTER.city) parts.push(FILTER.city);
+  if (FILTER.sectors.length) parts.push(FILTER.sectors.length + ' напр.');
+  if (FILTER.noExperience) parts.push('без опыта');
+  document.getElementById('filterSummaryText').textContent = parts.length ? parts.join(' · ') : 'Все вакансии';
 }
 
 function renderFilterSectorChips() {
@@ -72,7 +77,7 @@ function initFilterUI() {
     });
   });
 
-  document.getElementById('filterBtn').addEventListener('click', function (e) {
+  document.getElementById('filterPillBtn').addEventListener('click', function (e) {
     e.stopPropagation();
     haptic('light');
     document.getElementById('filterPanel').classList.toggle('hidden');
@@ -146,12 +151,15 @@ function renderCard() {
     v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '',
   ].filter(Boolean).join('');
 
+  const tel = telHref(v.phone);
+
   wrap.innerHTML =
     '<div class="card" id="activeCard">' +
       '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
       (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
       '<div class="card-body">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
+      (tel ? '<a class="card-phone" href="tel:' + escapeHtml(tel) + '">📞 ' + escapeHtml(v.phone) + '</a>' : '') +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
 }
