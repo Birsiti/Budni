@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 14:50
+   изменено 2026-09-15 15:05
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -170,6 +170,20 @@ body{ overscroll-behavior-y:contain; }
 .round-btn.like{ background:var(--ok-soft); color:var(--ok); }
 
 .deck-wrap .empty{ padding:56px 16px; }
+
+/* ---------- конечный экран ленты (под фильтр пусто / вакансии кончились) ---------- */
+.empty-state{ text-align:center; padding:52px 24px 16px; }
+.empty-ico{ font-size:42px; line-height:1; margin-bottom:14px; }
+.empty-title{ font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:17px; color:var(--ink); margin-bottom:6px; }
+.empty-sub{ color:var(--ink-soft); font-size:14px; line-height:1.4; margin:0 0 20px; }
+.empty-state .btn-primary{ margin-bottom:10px; }
+.btn-secondary{
+  width:100%; min-height:48px; border-radius:var(--radius); border:1px solid var(--accent);
+  background:var(--accent-soft); color:var(--accent);
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-secondary[disabled]{ opacity:.6; }
 
 /* ---------- избранное (список) ---------- */
 .fav-card{

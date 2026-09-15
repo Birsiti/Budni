@@ -1,4 +1,4 @@
-// изменено 2026-09-15 14:50
+// изменено 2026-09-15 15:05
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -253,15 +253,61 @@ document.addEventListener('click', function (e) {
   if (v) shareText(v.clean_text || v.position || '');
 });
 
-function renderCard() {
+// конечный экран ленты — две ветки: «под фильтр пусто» (сбросить фильтр +
+// подписаться на город, чтобы прислали в бот при появлении) и «вакансий
+// вообще нет» (без действия, тут предлагать нечего)
+function renderEmptyDeck() {
   const wrap = document.getElementById('deckWrap');
-  if (DECK_INDEX >= DECK.length) {
-    wrap.innerHTML = DECK.length === 0 && filterIsActive()
-      ? '<div class="empty">Под фильтр ничего не нашлось — измените город или направление в фильтре</div>'
-      : '<div class="empty">Пока вакансий больше нет — загляните позже 👋</div>';
-    document.getElementById('deckActions').classList.add('hidden');
+  document.getElementById('deckActions').classList.add('hidden');
+
+  if (!filterIsActive()) {
+    wrap.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-ico">👋</div>' +
+        '<div class="empty-title">Вакансии закончились</div>' +
+        '<p class="empty-sub">Загляните чуть позже — мы постоянно добавляем новые.</p>' +
+      '</div>';
     return;
   }
+
+  const subLabel = '🔔 Подписаться на «' + FILTER.city + '»';
+  wrap.innerHTML =
+    '<div class="empty-state">' +
+      '<div class="empty-ico">🔍</div>' +
+      '<div class="empty-title">Под фильтр ничего не нашлось</div>' +
+      '<p class="empty-sub">Попробуйте другой город или направление.</p>' +
+      '<button type="button" class="btn-primary" id="emptyResetBtn">Сбросить фильтр</button>' +
+      (FILTER.city ? '<button type="button" class="btn-secondary" id="emptySubBtn">' + escapeHtml(subLabel) + '</button>' : '') +
+    '</div>';
+
+  document.getElementById('emptyResetBtn').addEventListener('click', function () {
+    haptic('light');
+    document.getElementById('filterReset').click(); // тот же сброс, что в панели
+  });
+
+  const subBtn = document.getElementById('emptySubBtn');
+  if (subBtn) {
+    subBtn.addEventListener('click', async function () {
+      haptic('light');
+      subBtn.disabled = true;
+      subBtn.textContent = '…';
+      const res = await apiPost({ action: 'add_subscription', city: FILTER.city, keyword: '' })
+        .catch(function () { return { ok: false }; });
+      if (res.ok) {
+        haptic('success');
+        subBtn.textContent = res.duplicate ? '✓ Уже подписаны' : '✓ Подписались, пришлём в бот';
+      } else {
+        haptic('error');
+        subBtn.disabled = false;
+        subBtn.textContent = subLabel;
+      }
+    });
+  }
+}
+
+function renderCard() {
+  const wrap = document.getElementById('deckWrap');
+  if (DECK_INDEX >= DECK.length) { renderEmptyDeck(); return; }
   document.getElementById('deckActions').classList.remove('hidden');
   const v = DECK[DECK_INDEX];
 
