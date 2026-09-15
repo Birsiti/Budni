@@ -1,4 +1,4 @@
-// изменено 2026-09-15 12:00
+// изменено 2026-09-15 12:40
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -7,6 +7,18 @@
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
 // ============================================================
+
+// известные города РБ + районы Минска/Минского района, которые реально
+// встречаются в вакансиях (сверено с admin-панелью) — для подсказки под
+// полем «Город». Не претендует на полноту, дополнять по мере находок.
+var BY_CITIES = ['Минск', 'Барановичи', 'Бобруйск', 'Новополоцк', 'Полоцк', 'Витебск',
+  'Гомель', 'Гродно', 'Могилёв', 'Брест', 'Борисов', 'Пинск', 'Орша', 'Мозырь',
+  'Солигорск', 'Лида', 'Молодечно', 'Жлобин', 'Светлогорск', 'Речица', 'Жодино',
+  'Слуцк', 'Кобрин', 'Волковыск', 'Сморгонь', 'Рогачёв', 'Осиповичи', 'Новогрудок',
+  'Дзержинск', 'Слоним', 'Иваново', 'Пружаны', 'Столбцы', 'Фаниполь', 'Заславль',
+  'Логойск', 'Червень', 'Марьина Горка', 'Смолевичи', 'Берёза',
+  'Колодищи', 'Боровляны', 'Мачулищи', 'Озерцо', 'Ждановичи', 'Ратомка',
+  'Шабаны', 'Уручье', 'Каменная Горка', 'Лошица', 'Сухарево', 'Копище', 'Чижовка'];
 
 // ================= ФИЛЬТР ЛЕНТЫ =================
 var FILTER_KEY = 'budni_filter';
@@ -61,12 +73,41 @@ function applyProfileToFilter(city, sectors) {
 
 function closeFilterPanel() { document.getElementById('filterPanel').classList.add('hidden'); }
 
+// подсказка городов по начальным буквам под полем «Город» — свой дропдаун,
+// не <datalist> (в Telegram iOS WebView он ненадёжен/не показывается)
+function initCitySuggest() {
+  const input = document.getElementById('filterCity');
+  const box = document.getElementById('citySuggest');
+
+  function hide() { box.classList.add('hidden'); box.innerHTML = ''; }
+
+  input.addEventListener('input', function () {
+    const q = input.value.trim().toLowerCase();
+    if (!q) return hide();
+    const matches = BY_CITIES.filter(function (c) { return c.toLowerCase().indexOf(q) === 0; }).slice(0, 8);
+    if (!matches.length) return hide();
+    box.innerHTML = matches.map(function (c) {
+      return '<button type="button" class="city-suggest-item">' + escapeHtml(c) + '</button>';
+    }).join('');
+    box.classList.remove('hidden');
+  });
+  input.addEventListener('blur', function () { setTimeout(hide, 150); }); // после clic по пункту
+  box.addEventListener('click', function (e) {
+    const btn = e.target.closest('.city-suggest-item');
+    if (!btn) return;
+    input.value = btn.textContent;
+    hide();
+    haptic('light');
+  });
+}
+
 function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
   document.getElementById('filterNoExp').checked = !!FILTER.noExperience;
   applyJobTypeUI();
   updateFilterSummary();
+  initCitySuggest();
 
   // формат (рядом/вахта) внутри панели — меняет только UI панели, применяется по «Показать»
   document.querySelectorAll('input[name="jobType"]').forEach(function (input) {
@@ -132,6 +173,25 @@ async function loadDeck() {
   renderCard();
 }
 
+// подставляет <a> прямо на телефон/юзернейм внутри уже экранированного
+// текста поста — вместо отдельной кнопки-дубля под карточкой. Строковый
+// split/join, не regex — номер телефона содержит скобки/дефисы, которые
+// пришлось бы экранировать как спецсимволы паттерна.
+function linkifyContacts(escapedText, v) {
+  var html = escapedText;
+  var tel = telHref(v.phone);
+  if (v.phone && tel) {
+    var escPhone = escapeHtml(v.phone);
+    html = html.split(escPhone).join('<a href="tel:' + escapeHtml(tel) + '">' + escPhone + '</a>');
+  }
+  if (v.contact_username) {
+    var escUser = escapeHtml(v.contact_username);
+    var handle = v.contact_username.replace(/^@/, '');
+    html = html.split(escUser).join('<a href="https://t.me/' + escapeHtml(handle) + '" target="_blank" rel="noopener">' + escUser + '</a>');
+  }
+  return html;
+}
+
 function renderCard() {
   const wrap = document.getElementById('deckWrap');
   if (DECK_INDEX >= DECK.length) {
@@ -151,15 +211,12 @@ function renderCard() {
     v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '',
   ].filter(Boolean).join('');
 
-  const tel = telHref(v.phone);
-
   wrap.innerHTML =
     '<div class="card" id="activeCard">' +
       '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
       (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
-      '<div class="card-body">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
-      (tel ? '<a class="card-phone" href="tel:' + escapeHtml(tel) + '">📞 ' + escapeHtml(v.phone) + '</a>' : '') +
+      '<div class="card-body">' + linkifyContacts(escapeHtml(v.clean_text || v.position || ''), v) + '</div>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
 }
