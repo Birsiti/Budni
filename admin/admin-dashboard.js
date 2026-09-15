@@ -1,4 +1,4 @@
-// изменено 2026-09-14 18:30
+// изменено 2026-09-15 21:15
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -150,7 +150,7 @@ function renderBody() {
     collapsibleCard('sectors', sectorRows(s), sectorTotal(s)) +
     '<div id="swipeBox"><div class="section-title">Свайпы</div><div class="card"><div class="empty">Загрузка…</div></div></div>' +
     '<div class="section-title">По каналам</div>' +
-    collapsibleCard('channels', breakdownRows(s.byChannel)) +
+    collapsibleCard('channels', breakdownRows(s.byChannel, 'brow-channel')) +
     '<div class="section-title">По городам</div>' +
     collapsibleCard('cities', cityRows(s.byCity)) +
     rateControl() +
@@ -269,12 +269,13 @@ function sectorTotal(s) {
     '<span class="brow-num mono">' + tq + ' / ' + tp + ' <span class="dim">(' + ta + ')</span></span></div></div>';
 }
 
-function breakdownRows(obj) {
+function breakdownRows(obj, clickClass) {
   const keys = Object.keys(obj || {}).sort(function (a, b) { return obj[b] - obj[a]; });
   if (!keys.length) return [];
   const max = obj[keys[0]] || 1;
   return keys.map(function (k) {
-    return '<div class="brow"><div class="brow-top"><span>' + escapeHtml(k) + '</span>' +
+    return '<div class="brow' + (clickClass ? ' ' + clickClass + '" data-channel="' + escapeHtml(k) : '') + '">' +
+      '<div class="brow-top"><span>' + escapeHtml(k) + '</span>' +
       '<span class="brow-num mono">' + obj[k] + '</span></div>' +
       '<div class="bar"><i style="width:' + Math.round(obj[k] / max * 100) + '%"></i></div></div>';
   });
@@ -426,12 +427,16 @@ async function loadSourcesInto() {
   if (pending) { badge.textContent = pending; badge.classList.remove('hidden'); }
 }
 
-// ---------- шторка «вакансии этого города» ----------
-async function openCitySheet(city) {
+// ---------- шторка «вакансии этого города/канала» ----------
+// Один и тот же DOM/бэкенд-паттерн на два ключа фильтра (см. api.admin
+// vacancies_by_city/vacancies_by_channel) — отличается только action и
+// какое поле не дублировать в meta-строке карточки (город уже в заголовке
+// шторки при kind:'city', канал — при kind:'channel').
+async function openFilterSheet(kind, value) {
   const backdrop = document.getElementById('citySheetBackdrop');
   const sheet = document.getElementById('citySheet');
   const body = document.getElementById('citySheetBody');
-  document.getElementById('citySheetTitle').textContent = city;
+  document.getElementById('citySheetTitle').textContent = value;
   body.innerHTML = '<div class="empty">Загрузка…</div>';
   backdrop.classList.add('open');
   sheet.classList.add('open');
@@ -440,23 +445,29 @@ async function openCitySheet(city) {
   }
   haptic('light');
 
-  const res = await apiPost({ action: 'vacancies_by_city', city: city });
+  const action = kind === 'channel' ? 'vacancies_by_channel' : 'vacancies_by_city';
+  const payload = kind === 'channel' ? { action: action, channel: value } : { action: action, city: value };
+  const res = await apiPost(payload);
   if (!sheet.classList.contains('open')) return;   // успели закрыть, пока ждали ответ
   if (!res.ok) { body.innerHTML = '<div class="empty">Ошибка: ' + escapeHtml(res.error || 'нет связи') + '</div>'; return; }
   const list = res.vacancies || [];
   if (!list.length) { body.innerHTML = '<div class="empty">Вакансий нет</div>'; return; }
   body.innerHTML = list.map(function (v, i) {
-    const meta = [v.company, v.salary_text].filter(Boolean).join(' · ');
+    const metaBits = kind === 'channel' ? [v.city, v.company, v.salary_text] : [v.company, v.salary_text];
+    const meta = metaBits.filter(Boolean).join(' · ');
     return '<div class="qcard qcard-open" data-i="' + i + '">' +
       '<div class="qtop"><div><div class="qpos">' + escapeHtml(v.position || '(без должности)') + '</div>' +
         (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') + '</div>' +
         (v.suspicious ? '<span class="badge badge-viber">⚠️</span>' : '') + '</div>' +
-      (v.channel ? '<div class="qmeta2"><span class="badge">' + escapeHtml(v.channel) + '</span>' +
+      (kind !== 'channel' && v.channel ? '<div class="qmeta2"><span class="badge">' + escapeHtml(v.channel) + '</span>' +
         (v.source === 'employer' ? '<span class="badge badge-employer">прямая</span>' : '') + '</div>' : '') +
       '<div class="qdetail" id="csd-' + i + '"><div class="rv-text">' + escapeHtml(v.clean_text || '(нет текста)') + '</div></div>' +
     '</div>';
   }).join('');
 }
+
+function openCitySheet(city) { return openFilterSheet('city', city); }
+function openChannelSheet(channel) { return openFilterSheet('channel', channel); }
 
 function closeCitySheet() {
   document.getElementById('citySheetBackdrop').classList.remove('open');
@@ -479,6 +490,8 @@ document.getElementById('citySheetBody').addEventListener('click', function (e) 
 document.getElementById('view').addEventListener('click', function (e) {
   const cityRow = e.target.closest('.brow-city');
   if (cityRow) { openCitySheet(cityRow.dataset.city); return; }
+  const channelRow = e.target.closest('.brow-channel');
+  if (channelRow) { openChannelSheet(channelRow.dataset.channel); return; }
   const grp = e.target.closest('.brow-toggle');
   if (grp) {
     const tail = grp.parentElement.querySelector('.list-tail');

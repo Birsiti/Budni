@@ -1,4 +1,4 @@
-/* изменено 2026-09-14 18:15 */
+/* изменено 2026-09-15 21:15 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -96,9 +96,9 @@ body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
 .brow-sub:last-child{ border-bottom:none; }
 .brow-sub .brow-top{ font-size:13px; color:var(--ink-soft); }
 
-/* строка города, кликабельная — открывает шторку со списком вакансий */
-.brow-city{ cursor:pointer; margin:0 -4px; padding-left:4px; padding-right:4px; border-radius:8px; }
-.brow-city:active{ background:var(--surface-2); }
+/* строка города/канала, кликабельная — открывает шторку со списком вакансий */
+.brow-city, .brow-channel{ cursor:pointer; margin:0 -4px; padding-left:4px; padding-right:4px; border-radius:8px; }
+.brow-city:active, .brow-channel:active{ background:var(--surface-2); }
 
 /* ---------- шторка (список вакансий по городу) ---------- */
 .sheet-backdrop{
