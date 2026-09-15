@@ -1,4 +1,4 @@
-// изменено 2026-09-15 12:40
+// изменено 2026-09-15 13:10
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -227,6 +227,10 @@ function bindCardGestures(card) {
   let startX = 0, startY = 0, dx = 0, startTime = 0, axis = null, active = false;
 
   card.addEventListener('pointerdown', function (e) {
+    // тап начался прямо на ссылке (телефон/юзернейм) — не встреваем вообще,
+    // иначе даже микро-дрожание пальца может увести axis в 'x' и
+    // setPointerCapture перехватит клик, ссылка не откроется
+    if (e.target.closest('a')) return;
     active = true; axis = null; dx = 0;
     startX = e.clientX; startY = e.clientY; startTime = Date.now();
   });

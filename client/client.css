@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 12:40
+   изменено 2026-09-15 13:10
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -87,8 +87,8 @@
   padding:14px; margin:2px 0 12px;
 }
 .filter-panel .field:last-of-type{ margin-bottom:10px; }
-/* пока панель фильтра открыта — прячем ленту и кнопки свайпа под ней */
-.filter-panel:not(.hidden) ~ .deck-wrap,
+/* пока панель фильтра открыта — прячем ленту (с шестерёнкой) и кнопки свайпа под ней */
+.filter-panel:not(.hidden) ~ .deck-stage,
 .filter-panel:not(.hidden) ~ .deck-actions,
 .filter-panel:not(.hidden) ~ .deck-nudge{ display:none; }
 .filter-actions{ display:flex; gap:10px; margin-top:4px; }
@@ -105,7 +105,20 @@
   min-height:calc(100vh - 150px);
   min-height:calc(100dvh - 150px);
 }
-.deck-wrap{ position:relative; flex:1; min-height:320px; overflow:hidden; }
+.deck-stage{ position:relative; flex:1; min-height:320px; }
+.deck-wrap{ position:absolute; inset:0; overflow:hidden; }
+/* шестерёнка настроек — прямо на карточке (верх-право, там же где бейджи),
+   вне #deckWrap: тот перерисовывается innerHTML на каждый свайп и убил бы
+   обработчик клика (settings.js вешает его один раз на #settingsBtn) */
+.card-settings-btn{
+  position:absolute; top:18px; right:18px; z-index:3;
+  width:34px; height:34px; border-radius:50%; flex:none;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center;
+}
+.card-settings-btn svg{ width:18px; height:18px; display:block; }
+.card-settings-btn:active{ background:var(--surface-3); }
+.deck-stage .settings-pop{ top:56px; right:18px; }
 .card{
   position:absolute; inset:0;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);

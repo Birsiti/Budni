@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-15 12:40 -->
+<!-- изменено 2026-09-15 13:10 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="../theme.css?v=20260915">
-<link rel="stylesheet" href="client.css?v=20260915b">
+<link rel="stylesheet" href="client.css?v=20260915c">
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
@@ -37,12 +37,6 @@
         </svg>
         <span class="icon-badge hidden" id="favCount"></span>
       </button>
-      <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
-        </svg>
-      </button>
     </div>
   </div>
   <div class="tabs">
@@ -50,7 +44,6 @@
     <button class="tab" data-tab="profile">Анкета <span class="dot hidden" id="profileDot"></span></button>
     <button class="tab" data-tab="post">Разместить</button>
   </div>
-  <div class="settings-pop hidden" id="settingsPop"></div>
 </div>
 
 <div class="content">
@@ -90,7 +83,16 @@
       <button class="deck-nudge-go" id="deckNudgeGo">Заполнить</button>
       <button class="deck-nudge-x" id="deckNudgeX" aria-label="Скрыть">✕</button>
     </div>
-    <div class="deck-wrap" id="deckWrap"></div>
+    <div class="deck-stage">
+      <div class="deck-wrap" id="deckWrap"></div>
+      <button class="card-settings-btn" id="settingsBtn" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <div class="settings-pop hidden" id="settingsPop"></div>
+    </div>
     <div class="deck-actions" id="deckActions">
       <button class="round-btn skip" id="skipBtn">✕ Пропустить</button>
       <button class="round-btn like" id="likeBtn">♥ Нравится</button>
@@ -226,7 +228,7 @@
 
 <script src="../app.js?v=20260915"></script>
 <script src="../settings.js?v=20260915"></script>
-<script src="deck.js?v=20260915b"></script>
+<script src="deck.js?v=20260915c"></script>
 <script src="favorites.js?v=20260915"></script>
 <script src="subscriptions.js?v=20260915"></script>
 <script src="post.js?v=20260915"></script>
