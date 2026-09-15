@@ -1,4 +1,4 @@
-// изменено 2026-09-15 14:20
+// изменено 2026-09-15 14:35
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -150,7 +150,13 @@ function initFilterUI() {
   document.getElementById('filterPillBtn').addEventListener('click', function (e) {
     e.stopPropagation();
     haptic('light');
-    document.getElementById('filterPanel').classList.toggle('hidden');
+    // открыта — тап по пилюле закрывает и сразу сохраняет, как «Показать»;
+    // закрыта — просто открываем, сохранять пока нечего
+    if (document.getElementById('filterPanel').classList.contains('hidden')) {
+      document.getElementById('filterPanel').classList.remove('hidden');
+    } else {
+      applyFilterFromPanel();
+    }
   });
   document.getElementById('filterApply').addEventListener('click', function () {
     haptic('light');
@@ -201,7 +207,7 @@ function linkifyContacts(escapedText, v) {
   var tel = telHref(v.phone);
   if (v.phone && tel) {
     var escPhone = escapeHtml(v.phone);
-    html = html.split(escPhone).join('<a href="tel:' + escapeHtml(tel) + '">' + escPhone + '</a>');
+    html = html.split(escPhone).join('<a href="tel:' + escapeHtml(tel) + '" class="tel-link" data-tel="' + escapeHtml(v.phone) + '">' + escPhone + '</a>');
   }
   if (v.contact_username) {
     var escUser = escapeHtml(v.contact_username);
@@ -210,6 +216,33 @@ function linkifyContacts(escapedText, v) {
   }
   return html;
 }
+
+function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); return; }
+  } catch (e) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch (e) {}
+}
+
+// tel: в этой обёртке Telegram WebView, похоже, не открывает набор номера
+// (у @юзернейма ссылка https://t.me/... открывается нормально, у tel: —
+// нет, хотя оба вставлены одинаково через linkifyContacts) — гарантированный
+// фолбэк: копируем номер и показываем его, tel: всё равно оставлен в href
+// на случай, если где-то у пользователя сработает и он сам
+document.addEventListener('click', function (e) {
+  const a = e.target.closest('.tel-link');
+  if (!a) return;
+  const num = a.dataset.tel;
+  copyToClipboard(num);
+  haptic('light');
+  alertAsync('Номер скопирован: ' + num);
+});
 
 function renderCard() {
   const wrap = document.getElementById('deckWrap');
