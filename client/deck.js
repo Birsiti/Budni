@@ -1,11 +1,13 @@
-// изменено 2026-09-15 14:00
+// изменено 2026-09-15 14:20
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
 // открывается пилюлей-триггером наверху ленты (#filterPillBtn).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Глобалы из client.html: setFavCount, flashFavHeart.
-// Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
+// Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary,
+//   applyProfileToFilter, applyFilterFromPanel (последняя — таб «Вакансии» в
+//   client.html зовёт её при открытой панели, не заставляя листать до низа).
 // ============================================================
 
 // известные города РБ + районы Минска/Минского района, которые реально
@@ -82,6 +84,15 @@ function initCitySuggest() {
 
   function hide() { box.classList.add('hidden'); box.innerHTML = ''; }
 
+  // клавиатура на iOS перекрывает поле/подсказку — как только видимая
+  // область экрана реально сжалась (клавиатура выехала), подскроллим
+  // поле в центр того, что осталось видно
+  input.addEventListener('focus', function () {
+    function reveal() { input.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', reveal, { once: true });
+    else setTimeout(reveal, 300);
+  });
+
   input.addEventListener('input', function () {
     const q = input.value.trim().toLowerCase();
     if (!q) return hide();
@@ -100,6 +111,23 @@ function initCitySuggest() {
     hide();
     haptic('light');
   });
+}
+
+// собирает поля панели в FILTER, сохраняет, закрывает панель, перегружает
+// ленту — вызывается и с «Показать», и с тапа по уже активной вкладке
+// «Вакансии» (см. client.html), чтобы не листать панель до самого низа
+function applyFilterFromPanel() {
+  FILTER.city = document.getElementById('filterCity').value.trim();
+  FILTER.sectors = Array.prototype.slice
+    .call(document.querySelectorAll('#filterSectors input:checked'))
+    .map(function (i) { return i.value; });
+  FILTER.noExperience = document.getElementById('filterNoExp').checked;
+  const jt = document.querySelector('input[name="jobType"]:checked');
+  FILTER.jobType = (jt && jt.value === 'вахта') ? 'вахта' : 'рядом';
+  saveFilter();
+  updateFilterSummary();
+  closeFilterPanel();
+  loadDeck();
 }
 
 function initFilterUI() {
@@ -126,17 +154,7 @@ function initFilterUI() {
   });
   document.getElementById('filterApply').addEventListener('click', function () {
     haptic('light');
-    FILTER.city = document.getElementById('filterCity').value.trim();
-    FILTER.sectors = Array.prototype.slice
-      .call(document.querySelectorAll('#filterSectors input:checked'))
-      .map(function (i) { return i.value; });
-    FILTER.noExperience = document.getElementById('filterNoExp').checked;
-    var jt = document.querySelector('input[name="jobType"]:checked');
-    FILTER.jobType = (jt && jt.value === 'вахта') ? 'вахта' : 'рядом';
-    saveFilter();
-    updateFilterSummary();
-    closeFilterPanel();
-    loadDeck();
+    applyFilterFromPanel();
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');

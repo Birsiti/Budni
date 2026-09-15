@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-15 14:00 -->
+<!-- изменено 2026-09-15 14:20 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -222,7 +222,7 @@
 
 <script src="../app.js?v=20260915"></script>
 <script src="../settings.js?v=20260915"></script>
-<script src="deck.js?v=20260915e"></script>
+<script src="deck.js?v=20260915f"></script>
 <script src="favorites.js?v=20260915"></script>
 <script src="subscriptions.js?v=20260915"></script>
 <script src="post.js?v=20260915"></script>
@@ -255,7 +255,15 @@ function showView(name){
 document.querySelectorAll('.tab').forEach(function(btn){
   btn.addEventListener('click', function(){
     haptic('light');
-    showView(btn.getAttribute('data-tab'));
+    const tab = btn.getAttribute('data-tab');
+    // фильтр открыт, тап по уже активной «Вакансии» — применяем и закрываем,
+    // не заставляя листать панель до кнопки «Показать» внизу
+    const panel = document.getElementById('filterPanel');
+    if (tab === 'deck' && panel && !panel.classList.contains('hidden')) {
+      applyFilterFromPanel();
+      return;
+    }
+    showView(tab);
   });
 });
 
