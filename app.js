@@ -1,4 +1,4 @@
-// изменено 2026-09-15 12:00
+// изменено 2026-09-15 15:20
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -175,10 +175,14 @@ function fmtBirth(iso) {
   return m ? (+m[3]) + ' ' + RU_MONTHS_GEN[+m[2] - 1] + ' ' + m[1] : '';
 }
 
-// поделиться текстом через штатный share-лист Telegram
+// поделиться текстом через штатный share-лист Telegram — ссылка на бота
+// дописана прямо в текст (не только в параметр url t.me/share) — так она
+// точно видна в самом сообщении, а не только как превью-карточка
 function shareText(text) {
+  const footer = '\n\n👉 Все вакансии: https://t.me/Budni_BY_Bot';
+  const body = String(text || '').slice(0, 3500 - footer.length) + footer;
   const url = 'https://t.me/share/url?url=' + encodeURIComponent('https://t.me/Budni_BY_Bot') +
-    '&text=' + encodeURIComponent(String(text || '').slice(0, 3500));
+    '&text=' + encodeURIComponent(body);
   if (tg && tg.openTelegramLink) { try { tg.openTelegramLink(url); return; } catch (e) {} }
   window.open(url, '_blank');
 }
