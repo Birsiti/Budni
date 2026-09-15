@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-15 13:10 -->
+<!-- изменено 2026-09-15 13:35 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="../theme.css?v=20260915">
-<link rel="stylesheet" href="client.css?v=20260915c">
+<link rel="stylesheet" href="client.css?v=20260915d">
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
@@ -37,6 +37,12 @@
         </svg>
         <span class="icon-badge hidden" id="favCount"></span>
       </button>
+      <button class="icon-btn-round" id="settingsBtn" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
   </div>
   <div class="tabs">
@@ -44,17 +50,12 @@
     <button class="tab" data-tab="profile">Анкета <span class="dot hidden" id="profileDot"></span></button>
     <button class="tab" data-tab="post">Разместить</button>
   </div>
+  <div class="settings-pop hidden" id="settingsPop"></div>
 </div>
 
 <div class="content">
 
   <div id="viewDeck">
-    <button class="filter-pill" id="filterPillBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 5h18M6 12h12M10 19h4"></path>
-      </svg>
-      <span id="filterSummaryText">Все вакансии</span>
-    </button>
     <div class="filter-panel hidden" id="filterPanel">
       <div class="field">
         <label>Формат</label>
@@ -85,13 +86,12 @@
     </div>
     <div class="deck-stage">
       <div class="deck-wrap" id="deckWrap"></div>
-      <button class="card-settings-btn" id="settingsBtn" aria-label="Настройки">
+      <button class="card-settings-btn" id="filterPillBtn" aria-label="Фильтр">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          <path d="M3 5h18M6 12h12M10 19h4"></path>
         </svg>
+        <span class="icon-dot hidden" id="filterDot"></span>
       </button>
-      <div class="settings-pop hidden" id="settingsPop"></div>
     </div>
     <div class="deck-actions" id="deckActions">
       <button class="round-btn skip" id="skipBtn">✕ Пропустить</button>
@@ -228,7 +228,7 @@
 
 <script src="../app.js?v=20260915"></script>
 <script src="../settings.js?v=20260915"></script>
-<script src="deck.js?v=20260915c"></script>
+<script src="deck.js?v=20260915d"></script>
 <script src="favorites.js?v=20260915"></script>
 <script src="subscriptions.js?v=20260915"></script>
 <script src="post.js?v=20260915"></script>

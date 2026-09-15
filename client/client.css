@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 13:10
+   изменено 2026-09-15 13:35
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -74,20 +74,12 @@
 .city-suggest-item:last-child{ border-bottom:none; }
 .city-suggest-item:active{ background:var(--surface-2); }
 
-/* ---------- фильтр ленты (пилюля-триггер наверху ленты, над карточкой) ---------- */
-.filter-pill{
-  display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
-  min-height:44px; margin-bottom:10px; padding:0 14px;
-  background:var(--accent-soft); border:1px solid var(--accent); border-radius:999px;
-  color:var(--accent); font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:13px;
-}
-.filter-pill svg{ width:16px; height:16px; flex:none; }
 .filter-panel{
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
   padding:14px; margin:2px 0 12px;
 }
 .filter-panel .field:last-of-type{ margin-bottom:10px; }
-/* пока панель фильтра открыта — прячем ленту (с шестерёнкой) и кнопки свайпа под ней */
+/* пока панель фильтра открыта — прячем ленту (с иконкой фильтра) и кнопки свайпа под ней */
 .filter-panel:not(.hidden) ~ .deck-stage,
 .filter-panel:not(.hidden) ~ .deck-actions,
 .filter-panel:not(.hidden) ~ .deck-nudge{ display:none; }
@@ -107,9 +99,9 @@
 }
 .deck-stage{ position:relative; flex:1; min-height:320px; }
 .deck-wrap{ position:absolute; inset:0; overflow:hidden; }
-/* шестерёнка настроек — прямо на карточке (верх-право, там же где бейджи),
+/* иконка-триггер фильтра — прямо на карточке (верх-право, там же где бейджи),
    вне #deckWrap: тот перерисовывается innerHTML на каждый свайп и убил бы
-   обработчик клика (settings.js вешает его один раз на #settingsBtn) */
+   обработчик клика (deck.js вешает его один раз на #filterPillBtn) */
 .card-settings-btn{
   position:absolute; top:18px; right:18px; z-index:3;
   width:34px; height:34px; border-radius:50%; flex:none;
@@ -118,7 +110,6 @@
 }
 .card-settings-btn svg{ width:18px; height:18px; display:block; }
 .card-settings-btn:active{ background:var(--surface-3); }
-.deck-stage .settings-pop{ top:56px; right:18px; }
 .card{
   position:absolute; inset:0;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
@@ -137,7 +128,7 @@
 /* телефон/юзернейм — кликабельны прямо внутри текста поста (см. deck.js
    renderCard: явно оборачивает найденные v.phone/v.contact_username в <a>
    поверх экранированного clean_text), без отдельной кнопки-дубля */
-.card-body a{ color:var(--ok); font-weight:600; text-decoration:none; }
+.card-body a{ color:var(--ok); font-weight:600; text-decoration:none; touch-action:manipulation; }
 
 .swipe-tag{
   position:absolute; top:18px; z-index:2;

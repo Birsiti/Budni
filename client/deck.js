@@ -1,8 +1,8 @@
-// изменено 2026-09-15 13:10
+// изменено 2026-09-15 13:35
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
-// открывается пилюлей-триггером наверху ленты (#filterPillBtn).
+// открывается иконкой на карточке, верх-право (#filterPillBtn).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary, applyProfileToFilter.
@@ -38,14 +38,9 @@ function applyJobTypeUI() {
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
 
-// текст на пилюле-триггере фильтра, наверху ленты
+// индикатор активного фильтра — точка на иконке-триггере (на карточке)
 function updateFilterSummary() {
-  const parts = [];
-  if (FILTER.jobType === 'вахта') parts.push('Вахта');
-  if (FILTER.city) parts.push(FILTER.city);
-  if (FILTER.sectors.length) parts.push(FILTER.sectors.length + ' напр.');
-  if (FILTER.noExperience) parts.push('без опыта');
-  document.getElementById('filterSummaryText').textContent = parts.length ? parts.join(' · ') : 'Все вакансии';
+  document.getElementById('filterDot').classList.toggle('hidden', !filterIsActive() && FILTER.jobType !== 'вахта');
 }
 
 function renderFilterSectorChips() {
