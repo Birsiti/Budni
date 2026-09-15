@@ -1,12 +1,17 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 14:00
+   изменено 2026-09-15 14:50
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
 /* запас снизу нужен только на вкладке «Разместить» (фикс. .submit-bar) —
    на ленте лишний отступ уводил кнопки свайпа под нижний край экрана */
 #viewPost{ padding-bottom:max(96px, calc(76px + var(--safe-bottom))); }
+
+/* скролл длинного текста внутри карточки не должен «протекать» на всю
+   страницу и утаскивать её вниз под шапку (iOS scroll chaining) —
+   .card-body уже overflow-y:auto, страница вокруг ловит остаток жеста */
+body{ overscroll-behavior-y:contain; }
 
 /* шапка липкая и с фоном — чтобы строку иконок не перекрывало и не терялось
    при прокрутке (частая жалоба в Telegram WebApp) */
@@ -122,7 +127,9 @@
 .card-badges{ display:flex; gap:6px; flex-wrap:wrap; }
 .card-body{
   flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
-  white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink); padding-top:2px;
+  overscroll-behavior-y:contain;
+  white-space:pre-line; font-size:16px; line-height:1.5; color:var(--ink);
+  padding-top:2px; padding-bottom:46px; /* место под .card-share-btn поверх текста */
 }
 .card-badges + .card-body{
   border-top:1px solid var(--line); margin-top:10px; padding-top:10px;
@@ -131,6 +138,16 @@
    renderCard: явно оборачивает найденные v.phone/v.contact_username в <a>
    поверх экранированного clean_text), без отдельной кнопки-дубля */
 .card-body a{ color:var(--ok); font-weight:600; text-decoration:none; touch-action:manipulation; }
+
+/* «поделиться» — фиксирован в углу карточки (не в .card-body, чтобы не
+   уезжал вместе со скроллом длинного текста) */
+.card-share-btn{
+  position:absolute; bottom:14px; right:14px; z-index:3;
+  width:40px; height:40px; border-radius:50%; flex:none;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center; font-size:17px;
+}
+.card-share-btn:active{ background:var(--surface-3); }
 
 .swipe-tag{
   position:absolute; top:18px; z-index:2;

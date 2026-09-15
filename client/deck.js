@@ -1,9 +1,10 @@
-// изменено 2026-09-15 14:35
+// изменено 2026-09-15 14:50
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
 // открывается пилюлей-триггером наверху ленты (#filterPillBtn).
-// Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser, SECTORS.
+// Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser,
+//   SECTORS, telHref, alertAsync, shareText.
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary,
 //   applyProfileToFilter, applyFilterFromPanel (последняя — таб «Вакансии» в
@@ -244,6 +245,14 @@ document.addEventListener('click', function (e) {
   alertAsync('Номер скопирован: ' + num);
 });
 
+// «поделиться» на карточке — та же shareText(), что и в Избранном
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.card-share-btn')) return;
+  haptic('light');
+  const v = DECK[DECK_INDEX];
+  if (v) shareText(v.clean_text || v.position || '');
+});
+
 function renderCard() {
   const wrap = document.getElementById('deckWrap');
   if (DECK_INDEX >= DECK.length) {
@@ -256,11 +265,12 @@ function renderCard() {
   document.getElementById('deckActions').classList.remove('hidden');
   const v = DECK[DECK_INDEX];
 
-  // на карточке — только «сигнальные» бейджи, которых нет в тексте поста
+  // на карточке — только «сигнальные» бейджи, которых нет в тексте поста.
+  // «Без опыта» убран — дублирует и сводку в пилюле фильтра, и «Требования»
+  // в самом тексте поста, лишняя строка над карточкой.
   const badges = [
     v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая</span>' : '',
     v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '',
-    v.no_experience ? '<span class="badge">🆕 Без опыта</span>' : '',
   ].filter(Boolean).join('');
 
   wrap.innerHTML =
@@ -269,6 +279,7 @@ function renderCard() {
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
       (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
       '<div class="card-body">' + linkifyContacts(escapeHtml(v.clean_text || v.position || ''), v) + '</div>' +
+      '<button type="button" class="card-share-btn" aria-label="Поделиться">↗</button>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
 }
@@ -279,10 +290,10 @@ function bindCardGestures(card) {
   let startX = 0, startY = 0, dx = 0, startTime = 0, axis = null, active = false;
 
   card.addEventListener('pointerdown', function (e) {
-    // тап начался прямо на ссылке (телефон/юзернейм) — не встреваем вообще,
-    // иначе даже микро-дрожание пальца может увести axis в 'x' и
-    // setPointerCapture перехватит клик, ссылка не откроется
-    if (e.target.closest('a')) return;
+    // тап начался на ссылке (телефон/юзернейм) или кнопке (поделиться) —
+    // не встреваем вообще, иначе даже микро-дрожание пальца может увести
+    // axis в 'x' и setPointerCapture перехватит клик
+    if (e.target.closest('a, button')) return;
     active = true; axis = null; dx = 0;
     startX = e.clientX; startY = e.clientY; startTime = Date.now();
   });
