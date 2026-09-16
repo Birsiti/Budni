@@ -1,4 +1,4 @@
-// изменено 2026-09-15 21:15
+// изменено 2026-09-16 15:35
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -455,15 +455,31 @@ async function openFilterSheet(kind, value) {
   body.innerHTML = list.map(function (v, i) {
     const metaBits = kind === 'channel' ? [v.city, v.company, v.salary_text] : [v.company, v.salary_text];
     const meta = metaBits.filter(Boolean).join(' · ');
+    const src = sourceUrl(v);
     return '<div class="qcard qcard-open" data-i="' + i + '">' +
       '<div class="qtop"><div><div class="qpos">' + escapeHtml(v.position || '(без должности)') + '</div>' +
         (meta ? '<div class="qmeta">' + escapeHtml(meta) + '</div>' : '') + '</div>' +
         (v.suspicious ? '<span class="badge badge-viber">⚠️</span>' : '') + '</div>' +
       (kind !== 'channel' && v.channel ? '<div class="qmeta2"><span class="badge">' + escapeHtml(v.channel) + '</span>' +
         (v.source === 'employer' ? '<span class="badge badge-employer">прямая</span>' : '') + '</div>' : '') +
-      '<div class="qdetail" id="csd-' + i + '"><div class="rv-text">' + escapeHtml(v.clean_text || '(нет текста)') + '</div></div>' +
+      '<div class="qdetail" id="csd-' + i + '"><div class="rv-text">' + escapeHtml(v.clean_text || '(нет текста)') + '</div>' +
+        (src ? '<a class="src-link" href="' + src + '" target="_blank" rel="noopener">↗ ' + escapeHtml(v.channel) + ' #' + escapeHtml(String(v.msg_id)) + '</a>' : '') +
+      '</div>' +
     '</div>';
   }).join('');
+}
+
+// ссылка на первоисточник — праca.by/rabota.by по msg_id, обычный TG-канал
+// по username. Для приватных групп (t.me/+HASH, без public username) msg_id
+// есть, но публичной ссылки не построить — тогда не показываем.
+function sourceUrl(v) {
+  if (!v.msg_id) return '';
+  if (v.channel === 'praca.by') return 'https://praca.by/vacancy/' + encodeURIComponent(v.msg_id) + '/';
+  if (v.channel === 'rabota.by') return 'https://rabota.by/vacancy/' + encodeURIComponent(v.msg_id);
+  if (v.channel && /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(v.channel)) {
+    return 'https://t.me/' + v.channel + '/' + encodeURIComponent(v.msg_id);
+  }
+  return '';
 }
 
 function openCitySheet(city) { return openFilterSheet('city', city); }
@@ -478,6 +494,7 @@ function closeCitySheet() {
 document.getElementById('citySheetBackdrop').addEventListener('click', closeCitySheet);
 document.getElementById('citySheetClose').addEventListener('click', closeCitySheet);
 document.getElementById('citySheetBody').addEventListener('click', function (e) {
+  if (e.target.closest('.src-link')) return;   // не сворачивать деталь при переходе по ссылке
   const card = e.target.closest('.qcard-open');
   if (!card) return;
   const detail = document.getElementById('csd-' + card.dataset.i);
