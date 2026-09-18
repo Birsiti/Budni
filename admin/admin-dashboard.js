@@ -1,4 +1,4 @@
-// изменено 2026-09-18 20:48
+// изменено 2026-09-18 21:05
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -335,11 +335,20 @@ function cityRows(obj) {
     const items = grp.items;
     const subKeys = Object.keys(items).sort(function (a, b) { return items[b] - items[a]; });
     const subMax = items[subKeys[0]] || 1;
-    const subRows = subKeys.map(function (sk) {
+    const subRow = function (sk) {
       return '<div class="brow-sub brow-city" data-city="' + escapeHtml(sk) + '"><div class="brow-top"><span>' + escapeHtml(sk) + '</span>' +
         '<span class="brow-num mono">' + items[sk] + '</span></div>' +
         '<div class="bar"><i style="width:' + Math.round(items[sk] / subMax * 100) + '%"></i></div></div>';
-    }).join('');
+    };
+    let subRows = subKeys.slice(0, TOP_N).map(subRow).join('');
+    const subExtra = subKeys.length - TOP_N;
+    if (subExtra > 0) {
+      const subOpen = lsGet('budni_exp_citiesSub_' + grp.key) === '1';
+      subRows += '<div class="list-tail' + (subOpen ? '' : ' hidden') + '">' +
+        subKeys.slice(TOP_N).map(subRow).join('') + '</div>';
+      subRows += '<button type="button" class="list-more" data-exp="citiesSub_' + grp.key + '">' +
+        (subOpen ? 'свернуть' : 'ещё ' + subExtra) + '</button>';
+    }
     const open = lsGet('budni_exp_cities_' + grp.key) === '1';
     return '<div class="brow-group">' +
       '<button type="button" class="brow-toggle" data-exp-group="cities_' + grp.key + '">' +
