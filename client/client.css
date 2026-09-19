@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-15 15:05
+   изменено 2026-09-19 13:50
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -64,8 +64,8 @@ body{ overscroll-behavior-y:contain; }
 /* «Без опыта» — тот же ряд, что «Рядом/Вахта», с отступом-разделителем */
 .chip-sep{ margin-left:10px; }
 
-/* ---------- подсказка городов под полем ввода (фильтр) ---------- */
-#filterCityField{ position:relative; }
+/* ---------- подсказка под текстовым полем (город в фильтре/анкете/форме, должность в форме) ---------- */
+#filterCityField, .suggest-field{ position:relative; }
 .city-suggest{
   position:absolute; left:0; right:0; top:100%; z-index:5; margin-top:4px;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);

@@ -1,9 +1,11 @@
+// изменено 2026-09-19 13:45
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
 // автоподстановка имени/телефона из листа КОНТАКТЫ, продление по ссылке.
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, alertAsync,
 //   confirmAsync, telegramUser, SECTORS, bindPhoneMask, formatPhoneTail.
+// Глобалы из deck.js: BY_CITIES, BY_POSITIONS, bindSuggest.
 // Экспортирует: initPost, loadMyVacancies, prefillFromContact, handleRenewParam.
 // ============================================================
 
@@ -24,6 +26,8 @@ function initPost() {
   });
 
   bindPhoneMask(postPhoneInput);
+  bindSuggest(document.getElementById('fCity'), document.getElementById('fCitySuggest'), BY_CITIES, 'prefix');
+  bindSuggest(document.getElementById('fPosition'), document.getElementById('fPositionSuggest'), BY_POSITIONS, 'contains');
 
   document.getElementById('postSubmitBtn').addEventListener('click', submitVacancy);
 }

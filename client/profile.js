@@ -1,3 +1,4 @@
+// изменено 2026-09-19 13:45
 // ============================================================
 // Будни_BY client — анкета соискателя как пошаговый мастер (3 шага) +
 // карточка-сводка заполненной анкеты. Вкладка «Анкета».
@@ -7,7 +8,7 @@
 // Бэкенд не меняется: get_profile / save_profile.
 // Глобалы: apiPost (client.html), haptic, escapeHtml, alertAsync, tg,
 //   telegramUser, SECTORS, bindPhoneMask, formatPhoneTail,
-//   applyProfileToFilter (deck.js).
+//   applyProfileToFilter, BY_CITIES, bindSuggest (deck.js).
 // Экспортирует: initProfile, loadProfile, openWizard.
 // ============================================================
 
@@ -112,9 +113,12 @@ function renderWizardStep() {
         '<div class="phone-field"><span class="phone-prefix">+375</span>' +
         '<input type="tel" class="phone-input" id="wPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12"></div>' +
         '<p class="profile-note">Нужен, только если хотите публиковать анкету в группе. Для отклика на чужую вакансию — не обязателен.</p></div>' +
-      '<div class="field"><label>Город</label><input type="text" id="wCity" placeholder="например, Минск"></div>';
+      '<div class="field suggest-field"><label>Город</label>' +
+        '<input type="text" id="wCity" placeholder="например, Минск" autocomplete="off">' +
+        '<div class="city-suggest hidden" id="wCitySuggest"></div></div>';
     document.getElementById('wName').value = WIZ.name;
     document.getElementById('wCity').value = WIZ.city;
+    bindSuggest(document.getElementById('wCity'), document.getElementById('wCitySuggest'), BY_CITIES, 'prefix');
     const bi = document.getElementById('wBirth');
     bi.value = WIZ.birth || '';
     bi.addEventListener('change', function () { WIZ.birth = bi.value; updateAgeHint(); });
