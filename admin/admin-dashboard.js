@@ -1,4 +1,4 @@
-// изменено 2026-09-19 12:15
+// изменено 2026-09-20 01:30
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -587,7 +587,10 @@ document.getElementById('view').addEventListener('click', function (e) {
 
 // ---------- переключатели статуса ----------
 document.getElementById('pauseToggle').addEventListener('click', async function () {
-  if (!_paused && !(await confirmAsync('Поставить публикацию на паузу? Вакансии будут копиться в очереди.'))) return;
+  const msg = _paused
+    ? 'Снять с паузы? Публикация в группу возобновится.'
+    : 'Поставить публикацию на паузу? Вакансии будут копиться в очереди.';
+  if (!(await confirmAsync(msg))) return;
   haptic('light');
   const res = await apiPost({ action: 'set_publish_pause', paused: !_paused });
   if (res.ok) {
@@ -600,7 +603,10 @@ document.getElementById('pauseToggle').addEventListener('click', async function 
 });
 
 document.getElementById('parserToggle').addEventListener('click', async function () {
-  if (!_parserPaused && !(await confirmAsync('Остановить парсинг? Новые вакансии перестанут собираться.'))) return;
+  const msg = _parserPaused
+    ? 'Возобновить парсинг?'
+    : 'Остановить парсинг? Новые вакансии перестанут собираться.';
+  if (!(await confirmAsync(msg))) return;
   haptic('light');
   const res = await apiPost({ action: 'set_parser_pause', paused: !_parserPaused });
   if (res.ok) {
