@@ -1,4 +1,4 @@
-// изменено 2026-09-19 14:20
+// изменено 2026-09-19 14:50
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
@@ -37,7 +37,28 @@ function initPost() {
   });
   renderPostPreview();
 
+  // автосфера по должности — только подсказка, выбор всегда можно поменять
+  // руками (клик по другой плитке ничем не ограничен). Срабатывает и по
+  // мере набора текста (точное совпадение), и после выбора из подсказки
+  // (клик по пункту не поднимает 'input' — ловим на blur).
+  const posInput = document.getElementById('fPosition');
+  posInput.addEventListener('input', function () { applyAutoSector(posInput.value); });
+  posInput.addEventListener('blur', function () { applyAutoSector(posInput.value); });
+
   document.getElementById('postSubmitBtn').addEventListener('click', submitVacancy);
+}
+
+// точное совпадение (без учёта регистра) по POS_SECTOR (deck.js) — переключает
+// плитку сферы программно, если должность узнана. Молча ничего не делает,
+// если совпадения нет (не гадаем на неизвестных формулировках).
+function applyAutoSector(positionValue) {
+  const sector = POS_SECTOR[positionValue.trim().toLowerCase()];
+  if (!sector || sector === postSelectedSector) return;
+  const radio = document.querySelector('#fSector input[value="' + CSS.escape(sector) + '"]');
+  if (!radio) return;
+  radio.checked = true;
+  postSelectedSector = sector;
+  renderPostPreview();
 }
 
 // та же структура текста, что build_clean_text() на бэкенде (api/format.py) —
