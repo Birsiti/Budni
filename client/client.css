@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-19 13:50
+   изменено 2026-09-19 14:20
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -284,6 +284,15 @@ body{ overscroll-behavior-y:contain; }
   position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + var(--safe-bottom));
   background:var(--bg); border-top:1px solid var(--line);
 }
+
+/* ---------- живой предпросмотр объявления (низ формы «Разместить») ---------- */
+.post-preview{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; white-space:pre-line; font-size:15px; line-height:1.5; color:var(--ink);
+  min-height:64px;
+}
+.post-preview:empty::before,
+.post-preview .preview-empty{ color:var(--ink-faint); font-size:13px; white-space:normal; }
 
 /* ---------- «Мои вакансии» (вверху вкладки «Разместить») ---------- */
 .myvac-label{

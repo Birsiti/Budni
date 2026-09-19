@@ -1,4 +1,4 @@
-// изменено 2026-09-19 13:45
+// изменено 2026-09-19 14:20
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
@@ -11,6 +11,8 @@
 
 var postSelectedSector = '';
 var postPhoneInput = null;
+var SECTOR_EMOJI_MAP = {};
+SECTORS.forEach(function (s) { SECTOR_EMOJI_MAP[s[0]] = s[1]; });
 
 function initPost() {
   postPhoneInput = document.getElementById('fPhone');
@@ -22,14 +24,54 @@ function initPost() {
   }).join('');
   postSelectedSector = SECTORS[0][0];
   el.querySelectorAll('input').forEach(function (inp) {
-    inp.addEventListener('change', function () { postSelectedSector = inp.value; haptic('light'); });
+    inp.addEventListener('change', function () { postSelectedSector = inp.value; haptic('light'); renderPostPreview(); });
   });
 
   bindPhoneMask(postPhoneInput);
   bindSuggest(document.getElementById('fCity'), document.getElementById('fCitySuggest'), BY_CITIES, 'prefix');
   bindSuggest(document.getElementById('fPosition'), document.getElementById('fPositionSuggest'), BY_POSITIONS, 'contains');
 
+  // предпросмотр — обновляется по вводу в любом поле, влияющем на текст поста
+  ['fPosition', 'fCity', 'fSalary', 'fCompany', 'fDescription', 'fPhone'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', renderPostPreview);
+  });
+  renderPostPreview();
+
   document.getElementById('postSubmitBtn').addEventListener('click', submitVacancy);
+}
+
+// та же структура текста, что build_clean_text() на бэкенде (api/format.py) —
+// держать в паре при правках формата поста, иначе предпросмотр разойдётся
+// с тем, что реально уйдёт в группу
+function renderPostPreview() {
+  const box = document.getElementById('postPreview');
+  const position = document.getElementById('fPosition').value.trim();
+  const city = document.getElementById('fCity').value.trim();
+  const salary = document.getElementById('fSalary').value.trim();
+  const company = document.getElementById('fCompany').value.trim();
+  const description = document.getElementById('fDescription').value.trim();
+  const phoneDigits = postPhoneInput.value.replace(/\D/g, '');
+
+  if (!position && !city && !salary && !company && !description && phoneDigits.length !== 9) {
+    box.innerHTML = '<span class="preview-empty">Заполните поля выше — здесь появится текст объявления, как его увидят в группе</span>';
+    return;
+  }
+
+  const lines = [];
+  lines.push((SECTOR_EMOJI_MAP[postSelectedSector] || '') + ' ' + postSelectedSector);
+  lines.push('🇧🇾' + (city ? ' · #' + city.replace(/\s+/g, '_') : ''));
+  if (company) lines.push('🏢 ' + company);
+
+  const job = [];
+  if (position) job.push('📋 ' + position);
+  if (salary) job.push('💰 ' + salary);
+  if (job.length) { lines.push(''); lines.push.apply(lines, job); }
+
+  if (description) { lines.push(''); lines.push('Условия:'); lines.push('• ' + description); }
+
+  if (phoneDigits.length === 9) { lines.push(''); lines.push('📞 +375' + phoneDigits); }
+
+  box.textContent = lines.join('\n');
 }
 
 async function submitVacancy() {
