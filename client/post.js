@@ -1,4 +1,4 @@
-// изменено 2026-09-19 14:50
+// изменено 2026-09-19 15:10
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
@@ -80,6 +80,7 @@ function renderPostPreview() {
 
   const lines = [];
   lines.push((SECTOR_EMOJI_MAP[postSelectedSector] || '') + ' ' + postSelectedSector);
+  lines.push('⭐ Подано напрямую через бота'); // все вакансии из этой формы — source=employer
   lines.push('🇧🇾' + (city ? ' · #' + city.replace(/\s+/g, '_') : ''));
   if (company) lines.push('🏢 ' + company);
 
