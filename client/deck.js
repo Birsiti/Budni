@@ -1,4 +1,4 @@
-// изменено 2026-09-19 14:45
+// изменено 2026-09-19 15:40
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -11,7 +11,9 @@
 //   client.html зовёт её при открытой панели, не заставляя листать до низа);
 //   BY_CITIES, BY_POSITIONS, bindSuggest — данные и общий дропдаун-компонент
 //   подсказки, переиспользуются в profile.js (город) и post.js (город, должность).
-//   POS_SECTOR — карта должность(lowercase)->сфера для автоподстановки в post.js.
+//   POS_SECTOR — карта должность(lowercase)->сфера для автоподстановки в post.js;
+//   initSubscribeGate — гейт подписки на канал после демо-лимита свайпов
+//   (get_deck возвращает subscribed/demoRemaining, см. api/vacancies.py).
 // ============================================================
 
 // города РБ + районы/посёлки Минской области — выгружены из реальной базы
@@ -215,6 +217,12 @@ function initFilterUI() {
 var DECK = [];
 var DECK_INDEX = 0;
 
+// демо-режим: пока не подписан на канал — сервер режет выдачу get_deck
+// по общему числу свайпов за всю историю (см. api/vacancies.py::get_deck).
+// DECK_SUBSCRIBED === false — конец колоды показывает гейт подписки
+// вместо обычного «вакансии закончились».
+var DECK_SUBSCRIBED = true;
+
 async function loadDeck() {
   const wrap = document.getElementById('deckWrap');
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
@@ -230,7 +238,43 @@ async function loadDeck() {
   }
   DECK = res.deck || [];
   DECK_INDEX = 0;
+  DECK_SUBSCRIBED = res.subscribed !== false;
   renderCard();
+}
+
+function renderSubscribeGate() {
+  document.getElementById('deckActions').classList.add('hidden');
+  const gate = document.getElementById('subscribeGate');
+  gate.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (tg && tg.BackButton) {
+    try { tg.BackButton.hide(); } catch (e) {}
+  }
+}
+
+function hideSubscribeGate() {
+  document.getElementById('subscribeGate').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function initSubscribeGate() {
+  document.getElementById('gateSubBtn').addEventListener('click', function () { haptic('light'); });
+  document.getElementById('gateCheckBtn').addEventListener('click', async function () {
+    const btn = document.getElementById('gateCheckBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Проверяем…';
+    haptic('light');
+    await loadDeck();
+    if (DECK_SUBSCRIBED) {
+      hideSubscribeGate();
+      haptic('success');
+    } else {
+      haptic('error');
+      await alertAsync('Пока не вижу подписку — если только что подписались, подождите пару секунд и попробуйте ещё раз.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Я подписался, проверить';
+  });
 }
 
 // подставляет <a> прямо на телефон/юзернейм внутри уже экранированного
@@ -341,7 +385,11 @@ function renderEmptyDeck() {
 
 function renderCard() {
   const wrap = document.getElementById('deckWrap');
-  if (DECK_INDEX >= DECK.length) { renderEmptyDeck(); return; }
+  if (DECK_INDEX >= DECK.length) {
+    if (!DECK_SUBSCRIBED) { renderSubscribeGate(); return; }
+    renderEmptyDeck();
+    return;
+  }
   document.getElementById('deckActions').classList.remove('hidden');
   const v = DECK[DECK_INDEX];
 

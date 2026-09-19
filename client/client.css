@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-19 14:20
+   изменено 2026-09-19 15:40
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -271,6 +271,16 @@ body{ overscroll-behavior-y:contain; }
   padding:12px 16px calc(12px + var(--safe-bottom));
   border-top:1px solid var(--line); background:var(--bg);
 }
+
+/* ---------- гейт подписки (демо-лимит свайпов исчерпан) ---------- */
+.gate-body{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:24px 28px calc(24px + var(--safe-bottom));
+}
+.gate-ico{ font-size:44px; line-height:1; margin-bottom:16px; }
+.gate-body h2{ font-size:21px; font-family:'Chakra Petch',sans-serif; margin:0 0 8px; }
+.gate-body .wsub{ margin:0 0 26px; }
+.gate-body .btn-primary, .gate-body .btn-secondary{ width:100%; max-width:320px; text-decoration:none; }
 
 /* сетка крупных чипов-плиток для шага «направления» */
 .chip-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
