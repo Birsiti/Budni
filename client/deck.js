@@ -1,4 +1,4 @@
-// изменено 2026-09-19 15:40
+// изменено 2026-09-20 02:15
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -37,6 +37,12 @@ var BY_CITIES = ["Барановичи", "Белоозерск", "Белынич
   "Слуцк", "Смиловичи", "Смолевичи", "Сморгонь", "Солигорск", "Старые Дороги", "Столбцы",
   "Столин", "Тарасово", "Узда", "Уручье", "Ушачи", "Фаниполь", "Ходзеж", "Хойники", "Цнянка",
   "Чаусы", "Червень", "Чечерск", "Чижовка", "Шабаны", "Шклов", "Шумилино", "Щомыслица", "Щучин"];
+
+// районы САМОГО Минска — держать 1-в-1 с MINSK_DISTRICTS в api/format.py.
+// Нужно, чтобы предпросмотр в post.js (renderPostPreview) писал "#Минск 📍Уручье",
+// а не "#Уручье", как реально уйдёт в пост (см. build_clean_text на бэкенде) —
+// иначе превью врёт именно для городов из наших же подсказок BY_CITIES.
+var MINSK_DISTRICTS = ["Шабаны", "Уручье", "Каменная Горка", "Лошица", "Сухарево", "Копище", "Колядичи", "Чижовка"];
 
 // должности — топ-450 реально встречавшихся (2+ раза) в структурированных
 // вакансиях, для подсказки под полем «Должность». Та же выгрузка, что BY_CITIES.
@@ -464,7 +470,16 @@ function bindCardGestures(card) {
   card.addEventListener('pointercancel', release);
 }
 
+// защита от двойного срабатывания, пока карточка улетает (240мс) — и с кнопок,
+// и с жеста (bindCardGestures зовёт finishSwipe напрямую); без неё быстрый
+// повторный тап шлёт record_swipe дважды, дважды крутит счётчик избранного
+// и дважды планирует DECK_INDEX++ (следующая вакансия молча пропускается)
+var SWIPE_LOCKED = false;
+
 function finishSwipe(decision, card, dxAtRelease) {
+  if (SWIPE_LOCKED) return;
+  SWIPE_LOCKED = true;
+
   haptic(decision === 'like' ? 'success' : 'light');
   const v = DECK[DECK_INDEX];
   apiPost({
@@ -482,15 +497,17 @@ function finishSwipe(decision, card, dxAtRelease) {
   const flyX = (dxAtRelease && dxAtRelease < 0 ? -1 : (dxAtRelease > 0 ? 1 : (decision === 'like' ? 1 : -1))) * 640;
   card.style.transition = 'transform .26s ease-out';
   card.style.transform = 'translate(' + flyX + 'px,0) rotate(' + (flyX / 20) + 'deg)';
-  setTimeout(function () { DECK_INDEX++; renderCard(); }, 240);
+  setTimeout(function () { DECK_INDEX++; SWIPE_LOCKED = false; renderCard(); }, 240);
 }
 
 function bindDeckButtons() {
   document.getElementById('skipBtn').onclick = function () {
+    if (SWIPE_LOCKED) return;
     const card = document.getElementById('activeCard');
     if (card) finishSwipe('skip', card, -1);
   };
   document.getElementById('likeBtn').onclick = function () {
+    if (SWIPE_LOCKED) return;
     const card = document.getElementById('activeCard');
     if (card) finishSwipe('like', card, 1);
   };

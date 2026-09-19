@@ -1,4 +1,4 @@
-// изменено 2026-09-19 15:10
+// изменено 2026-09-20 02:15
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
@@ -81,7 +81,11 @@ function renderPostPreview() {
   const lines = [];
   lines.push((SECTOR_EMOJI_MAP[postSelectedSector] || '') + ' ' + postSelectedSector);
   lines.push('⭐ Подано напрямую через бота'); // все вакансии из этой формы — source=employer
-  lines.push('🇧🇾' + (city ? ' · #' + city.replace(/\s+/g, '_') : ''));
+  // районы САМОГО Минска показываем как метку места внутри Минска (см.
+  // MINSK_DISTRICTS в api/format.py::build_clean_text) — иначе предпросмотр
+  // врёт для городов, которые есть в наших же подсказках (Шабаны, Уручье...)
+  const cityTag = MINSK_DISTRICTS.indexOf(city) !== -1 ? '#Минск 📍' + city : (city ? '#' + city.replace(/\s+/g, '_') : '');
+  lines.push('🇧🇾' + (cityTag ? ' · ' + cityTag : ''));
   if (company) lines.push('🏢 ' + company);
 
   const job = [];
@@ -91,7 +95,12 @@ function renderPostPreview() {
 
   if (description) { lines.push(''); lines.push('Условия:'); lines.push('• ' + description); }
 
-  if (phoneDigits.length === 9) { lines.push(''); lines.push('📞 +375' + phoneDigits); }
+  // тот же вид, что db.pg.norm_phone() на бэкенде: +375 (29) 123-45-67
+  if (phoneDigits.length === 9) {
+    const formatted = '+375 (' + phoneDigits.slice(0, 2) + ') ' + phoneDigits.slice(2, 5) +
+      '-' + phoneDigits.slice(5, 7) + '-' + phoneDigits.slice(7, 9);
+    lines.push('', '📞 ' + formatted);
+  }
 
   box.textContent = lines.join('\n');
 }

@@ -1,4 +1,4 @@
-// изменено 2026-09-07 11:03
+// изменено 2026-09-20 02:10
 // ============================================================
 // Будни_BY admin — общее ядро всех страниц админки (admin*.html).
 // Токен моста, обёртки API, настройки, кнопка «назад», общий STATE.
@@ -12,15 +12,16 @@ function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function saveToken(v) { try { localStorage.setItem(TOKEN_KEY, v); } catch (e) {} }
 
 async function apiGet(action) {
-  const url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&token=' + encodeURIComponent(getToken());
-  const res = await fetch(url);
+  const url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action);
+  const res = await fetch(url, { headers: { 'X-Admin-Token': getToken() } });
   return res.json();
 }
 
-// без явного Content-Type — иначе браузер шлёт preflight OPTIONS,
-// который Apps Script веб-апп не обрабатывает
+// токен — в заголовке X-Admin-Token (api/main.py::_token его и предпочитает),
+// не в query/body — не оседает в логах туннеля и истории браузера. Бэкенд —
+// FastAPI с CORS allow_headers=["*"], preflight OPTIONS обрабатывает сам.
 async function apiPost(payload) {
-  return apiCall(Object.assign({ token: getToken() }, payload));
+  return apiCall(payload, { 'X-Admin-Token': getToken() });
 }
 
 // на суб-странице: нет токена — уводим на хаб

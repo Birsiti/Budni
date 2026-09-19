@@ -1,4 +1,4 @@
-// изменено 2026-09-15 15:40
+// изменено 2026-09-20 02:10
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -112,8 +112,16 @@ var telegramUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.init
 // его в свой apiPost со своей авторизацией (initData у клиента, token у
 // админки) — без явного Content-Type, иначе браузер шлёт preflight OPTIONS,
 // который Apps Script веб-апп не обрабатывает.
-async function apiCall(payload) {
-  const res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+// extraHeaders — необязательный (админка передаёт X-Admin-Token сюда, а не
+// в query/body — не оседает в логах туннеля/истории браузера). Клиентский
+// apiPost его не передаёт: без лишних заголовков нет CORS-preflight на
+// каждый запрос ленты — там трафик выше и важна скорость.
+async function apiCall(payload, extraHeaders) {
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: extraHeaders,
+    body: JSON.stringify(payload),
+  });
   return res.json();
 }
 
