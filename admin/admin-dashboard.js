@@ -1,4 +1,4 @@
-// изменено 2026-09-18 21:05
+// изменено 2026-09-19 12:15
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -11,6 +11,7 @@
 // ============================================================
 
 var RATE_OPTIONS = [5, 10, 20, 50, 100];
+var EVERY_MIN_OPTIONS = [1, 2, 5, 10, 15, 30];
 var LIMIT_OPTIONS = [0, 30, 50, 100, 200, 400];
 var CHART_PERIODS = [['day', '7 дней'], ['week', '4 недели'], ['month', '6 месяцев']];
 var TOP_N = 5;   // строк списка видно до раскрытия
@@ -166,6 +167,9 @@ function renderBody() {
 
   document.querySelectorAll('.rate-opt[data-batch]').forEach(function (b) {
     b.addEventListener('click', function () { setRate('set_publish_batch', +b.dataset.batch, 'publishBatch', 'batch'); });
+  });
+  document.querySelectorAll('.rate-opt[data-everymin]').forEach(function (b) {
+    b.addEventListener('click', function () { setRate('set_publish_every_min', +b.dataset.everymin, 'publishRateMin', 'every_min'); });
   });
   document.querySelectorAll('.rate-opt[data-limit]').forEach(function (b) {
     b.addEventListener('click', function () { setRate('set_publish_daily_limit', +b.dataset.limit, 'publishDailyLimit', 'limit'); });
@@ -362,19 +366,25 @@ function cityRows(obj) {
 }
 
 function rateControl() {
-  const b = D.publishBatch, lim = D.publishDailyLimit;
+  const b = D.publishBatch, everyMin = D.publishRateMin || 5, lim = D.publishDailyLimit;
+  const perHour = everyMin ? Math.round(b * 60 / everyMin) : 0;
   const rate = RATE_OPTIONS.map(function (n) {
     return '<button class="rate-opt' + (n === b ? ' is-on' : '') + '" data-batch="' + n + '">' + n + '</button>';
+  }).join('');
+  const everyMinOpts = EVERY_MIN_OPTIONS.map(function (n) {
+    return '<button class="rate-opt' + (n === everyMin ? ' is-on' : '') + '" data-everymin="' + n + '">' + n + '</button>';
   }).join('');
   const limits = LIMIT_OPTIONS.map(function (n) {
     return '<button class="rate-opt' + (n === lim ? ' is-on' : '') + '" data-limit="' + n + '">' + (n === 0 ? '∞' : n) + '</button>';
   }).join('');
   return '<div class="section-title" style="margin-top:4px">Темп публикации в группу</div>' +
     '<div class="card">' +
-      '<p class="rate-note">За один тик (раз в 5 мин), по кругу из разных сфер. ' +
-      'Сейчас <b>' + b + '</b> → ~' + (b * 12) + '/час' +
+      '<p class="rate-note">За один тик (раз в <b>' + everyMin + '</b> мин), по кругу из разных сфер. ' +
+      'Сейчас <b>' + b + '</b> → ~' + perHour + '/час' +
       (lim > 0 ? ', но не больше <b>' + lim + '</b>/сутки' : '') + '.</p>' +
       '<div class="rate-row">' + rate + '</div>' +
+      '<p class="rate-note" style="margin:14px 0 8px">Интервал тика, минут:</p>' +
+      '<div class="rate-row">' + everyMinOpts + '</div>' +
       '<p class="rate-note" style="margin:14px 0 8px">Дневной лимит (∞ — без лимита):</p>' +
       '<div class="rate-row">' + limits + '</div>' +
     '</div>';
