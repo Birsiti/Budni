@@ -1,4 +1,4 @@
-// изменено 2026-09-20 01:30
+// изменено 2026-09-20 11:55
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -78,6 +78,10 @@ async function loadDashboard() {
 
   D.parser = main.parser || {};
   D.publisher = main.publisher || {};
+  // бэкенд кладёт паузу публикатора в корень ответа (main.paused), а не
+  // внутрь publisher{} (там только seenSec) — без этого тумблер после
+  // загрузки всегда показывал «включено», даже когда publisher_active=false
+  D.publisher.paused = !!main.paused;
   D.parser.stale = D.parser.seenSec == null || D.parser.seenSec > 180;
   D.publisher.stale = D.publisher.seenSec != null &&
     D.publisher.seenSec > Math.max(2400, (D.publishRateMin || 30) * 120);
