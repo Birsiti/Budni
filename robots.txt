@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /client/
+
+Sitemap: https://birsiti.github.io/Budni/sitemap.xml
