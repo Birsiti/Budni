@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /client/
 
-Sitemap: https://birsiti.github.io/Budni/sitemap.xml
+Sitemap: https://app.budni.tg-studio.xyz/sitemap.xml
