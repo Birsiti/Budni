@@ -80,10 +80,24 @@
     --blue-300:#8ad4f7; --blue-400:#5cc1f2; --blue-500:#2aabee; --blue-600:#1b8fcb; --blue-700:#166f9e;
     --teal-300:#7fe0d1; --teal-400:#4fc9b8; --teal-500:#38a89d; --teal-600:#2c8a80;
     --ink-50:#eef1f2; --ink-200:#c9cfd3; --ink-300:#a7afb5; --ink-500:#7b838a;
+    --on-accent:#0d1012;
+    --header-bg:rgba(13,16,18,.7); --header-bg-scrolled:rgba(13,16,18,.92);
+    --border-soft:rgba(255,255,255,.16); --border-hair:rgba(255,255,255,.06); --border-hair-strong:rgba(255,255,255,.1);
     --radius:14px; --radius-sm:10px; --maxw:1080px;
     --ease:cubic-bezier(.16,.8,.28,1); --gutter:20px;
   }
   @media(min-width:640px){ :root{ --gutter:32px; } }
+
+  /* ---------- светлая тема (переключается кнопкой в хедере) ---------- */
+  :root[data-theme="light"]{
+    --navy-950:#f4f6f8; --navy-900:#eef1f4; --navy-850:#e9edf1; --navy-800:#ffffff;
+    --navy-700:#e1e6eb; --navy-600:#c9d0d7;
+    --blue-300:#166f9e; --blue-400:#1b8fcb; --blue-500:#2aabee; --blue-600:#1b8fcb; --blue-700:#125a80;
+    --teal-300:#2c8a80; --teal-400:#2c8a80; --teal-500:#38a89d; --teal-600:#2c8a80;
+    --ink-50:#171a1d; --ink-200:#3f474e; --ink-300:#5b6570; --ink-500:#838c94;
+    --header-bg:rgba(244,246,248,.75); --header-bg-scrolled:rgba(244,246,248,.94);
+    --border-soft:rgba(13,16,18,.14); --border-hair:rgba(13,16,18,.08); --border-hair-strong:rgba(13,16,18,.12);
+  }
 
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
@@ -91,6 +105,7 @@
     background:var(--navy-950); color:var(--ink-50);
     font-family:'Inter',sans-serif; font-size:16px; line-height:1.5;
     -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    transition:background .3s var(--ease), color .3s var(--ease);
   }
   img,svg{ display:block; max-width:100%; }
   a{ color:inherit; text-decoration:none; }
@@ -139,25 +154,35 @@
   }
   .btn-primary{
     background:linear-gradient(135deg, var(--blue-400), var(--blue-500) 55%, var(--blue-600));
-    color:var(--navy-950); box-shadow:0 8px 24px -8px rgba(42,171,238,.5);
+    color:var(--on-accent); box-shadow:0 8px 24px -8px rgba(42,171,238,.5);
   }
   .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -8px rgba(42,171,238,.6); }
-  .btn-ghost{ background:transparent; border-color:rgba(255,255,255,.16); color:var(--ink-50); }
+  .btn-ghost{ background:transparent; border-color:var(--border-soft); color:var(--ink-50); }
   .btn-ghost:hover{ border-color:var(--blue-500); color:var(--blue-300); }
 
   /* ---------- header ---------- */
   header{
     position:fixed; top:0; left:0; right:0; z-index:100;
-    background:rgba(13,16,18,.7); backdrop-filter:blur(10px);
-    border-bottom:1px solid rgba(255,255,255,.06);
+    background:var(--header-bg); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-hair);
     transition:background .3s var(--ease), border-color .3s var(--ease);
   }
-  header.is-scrolled{ background:rgba(13,16,18,.92); border-color:rgba(255,255,255,.1); }
+  header.is-scrolled{ background:var(--header-bg-scrolled); border-color:var(--border-hair-strong); }
   .nav{ display:flex; align-items:center; justify-content:space-between; height:68px; gap:16px; }
   .brand{ display:flex; align-items:center; gap:9px; min-height:44px; }
-  .brand-mark{ width:30px; height:30px; flex:none; border-radius:8px; background:var(--blue-500); display:flex; align-items:center; justify-content:center; font-family:'Chakra Petch',sans-serif; font-weight:700; color:var(--navy-950); }
+  .brand-mark{ width:30px; height:30px; flex:none; border-radius:8px; background:var(--blue-500); display:flex; align-items:center; justify-content:center; font-family:'Chakra Petch',sans-serif; font-weight:700; color:var(--on-accent); }
   .brand-name{ font-family:'Chakra Petch',sans-serif; font-weight:600; font-size:16px; line-height:1.1; }
   .brand-name span{ display:block; color:var(--blue-400); font-size:10.5px; font-family:'JetBrains Mono',monospace; letter-spacing:.12em; font-weight:400; margin-top:3px; }
+  .nav-right{ display:flex; align-items:center; gap:10px; }
+  .theme-toggle{
+    width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center;
+    background:transparent; border:1px solid var(--border-soft); border-radius:10px;
+    font-size:17px; line-height:1; transition:border-color .25s var(--ease), background .25s var(--ease);
+  }
+  .theme-toggle:hover{ border-color:var(--blue-500); }
+  .theme-toggle .ic-moon{ display:none; }
+  :root[data-theme="light"] .theme-toggle .ic-sun{ display:none; }
+  :root[data-theme="light"] .theme-toggle .ic-moon{ display:block; }
 
   /* ---------- hero ---------- */
   .hero{ position:relative; padding:128px 0 64px; overflow:hidden; }
@@ -277,6 +302,15 @@
   .footer-links a:hover{ color:var(--blue-300); }
   .footer-note{ font-size:12px; color:var(--ink-500); width:100%; margin-top:20px; }
 </style>
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('budni_site_theme'); } catch (e) {}
+  var theme = (saved === 'light' || saved === 'dark') ? saved
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 </head>
 <body>
 
@@ -288,7 +322,12 @@
       <span class="brand-mark">Б</span>
       <span class="brand-name">Будни_BY<span>ВАКАНСИИ В БЕЛАРУСИ</span></span>
     </div>
-    <a class="btn btn-primary" href="https://t.me/Budni_BY_Bot" target="_blank" rel="noopener">Открыть бота</a>
+    <div class="nav-right">
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+        <span class="ic-sun">☀️</span><span class="ic-moon">🌙</span>
+      </button>
+      <a class="btn btn-primary" href="https://t.me/Budni_BY_Bot" target="_blank" rel="noopener">Открыть бота</a>
+    </div>
   </div>
 </header>
 
@@ -529,6 +568,13 @@ var header = document.getElementById('siteHeader');
 function onScroll() { header.classList.toggle('is-scrolled', window.scrollY > 8); }
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
+
+var themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', function () {
+  var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('budni_site_theme', next); } catch (e) {}
+});
 </script>
 </body>
 </html>
