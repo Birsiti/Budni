@@ -1,4 +1,4 @@
-// изменено 2026-09-07 11:03
+// изменено 2026-09-22 16:10
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
 // каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
@@ -20,6 +20,34 @@ function platformBadge(platform) {
     : '<span class="badge">Telegram</span>';
 }
 
+// ---------- проверка дублей при вводе (зеркалит api.people.extract_tg_username) ----------
+var SRC_TG_RE = /(?:t\.me\/|telegram\.me\/|@)([a-zA-Z][a-zA-Z0-9_]{3,31})/;
+var SRC_BARE_RE = /^([a-zA-Z][a-zA-Z0-9_]{3,31})$/;
+
+function extractTgUsernameClient(link) {
+  const s = String(link || '').trim();
+  const m = SRC_TG_RE.exec(s);
+  if (m) return m[1].toLowerCase();
+  const bare = SRC_BARE_RE.exec(s);
+  return bare ? bare[1].toLowerCase() : null;
+}
+
+// ищет уже существующий (не отклонённый) источник по ссылке или username —
+// та же логика, что и dup-проверка в api.admin.add_source, но локально по
+// уже загруженному STATE.sources, без похода на бэкенд.
+function findDuplicateSource(link) {
+  const s = String(link || '').trim();
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  const uname = extractTgUsernameClient(s);
+  return (STATE.sources || []).find(function (x) {
+    if (x.status === 'rejected') return false;
+    if (String(x.link || '').toLowerCase() === lower) return true;
+    if (uname && x.username && String(x.username).toLowerCase() === uname) return true;
+    return false;
+  }) || null;
+}
+
 function renderSources() {
   const el = document.getElementById('view');
   const pending = STATE.sources.filter(function (s) { return s.status === 'pending'; });
@@ -32,7 +60,10 @@ function renderSources() {
 
   const addForm =
     '<div class="section-title" style="margin-top:0;">Добавить канал для парсинга</div>' +
-    '<div class="field"><label>Ссылка или username</label><input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala"></div>' +
+    '<div class="field"><label>Ссылка или username</label>' +
+      '<input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala">' +
+      '<div class="field-hint" id="srcDupHint" hidden></div>' +
+    '</div>' +
     '<div class="field"><label>Платформа</label>' +
       '<div class="chip-group">' +
         '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
@@ -43,14 +74,16 @@ function renderSources() {
     '<button class="btn btn-approve" id="srcAddBtn" style="width:100%; margin-bottom:4px;">+ Добавить в парсинг</button>' +
     '<p style="color:var(--ink-faint); font-size:12px; margin:4px 0 0;">Подхватится парсером при следующем запуске.</p>';
 
-  function srcRow(s, actions) {
+  function srcRow(s, actions, showCount) {
     const warn = s.platform === 'telegram' && !s.parsed_username
       ? '<span class="badge badge-viber">ссылка не распознана</span>' : '';
     const uname = s.parsed_username ? '<span class="src-uname">→ @' + escapeHtml(s.parsed_username) + '</span>' : '';
+    const count = showCount
+      ? '<span class="badge badge-count">' + (s.miniappCount || 0) + ' в мини-аппе</span>' : '';
     return '<div class="src-row">' +
       '<div class="src-info"><div class="src-link">' + escapeHtml(s.link) + '</div>' +
       '<div class="src-meta">' + platformBadge(s.platform) +
-        (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + warn + uname + '</div></div>' +
+        (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + warn + count + uname + '</div></div>' +
       '<div class="src-actions">' + actions + '</div>' +
     '</div>';
   }
@@ -60,20 +93,20 @@ function renderSources() {
     : pending.map(function (s) {
         return srcRow(s,
           '<button class="icon-btn btn-approve" data-src-approve="' + escapeHtml(s.id) + '">✓</button>' +
-          '<button class="icon-btn btn-reject" data-src-reject="' + escapeHtml(s.id) + '">✕</button>');
+          '<button class="icon-btn btn-reject" data-src-reject="' + escapeHtml(s.id) + '">✕</button>', false);
       }).join('');
 
   const parsedHtml = tgApproved.length === 0
     ? '<div class="empty">Пока ни одного канала — добавьте выше или запустите seedSourceChannels()</div>'
     : tgApproved.map(function (s) {
-        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>');
+        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>', true);
       }).join('');
 
   const viberHtml = viberApproved.length === 0
     ? ''
     : '<div class="section-title">Viber — без парсинга (' + viberApproved.length + ')</div><div class="card">' +
       viberApproved.map(function (s) {
-        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>');
+        return srcRow(s, '<button class="icon-btn btn-reject" data-src-remove="' + escapeHtml(s.id) + '">✕</button>', true);
       }).join('') + '</div>';
 
   el.innerHTML =
@@ -84,16 +117,42 @@ function renderSources() {
     '<div class="card">' + pendingHtml + '</div>' +
     viberHtml;
 
+  const linkInput = document.getElementById('srcNewLink');
+  const dupHint = document.getElementById('srcDupHint');
+  linkInput.addEventListener('input', function () {
+    const dup = findDuplicateSource(linkInput.value);
+    if (dup) {
+      dupHint.hidden = false;
+      dupHint.textContent = '⚠ Уже есть в списке: ' + (dup.link || ('@' + dup.username)) +
+        (dup.status === 'pending' ? ' (ждёт одобрения)' : '');
+    } else {
+      dupHint.hidden = true;
+    }
+  });
+
   document.getElementById('srcAddBtn').addEventListener('click', async function () {
     const btn = this;
     const link = document.getElementById('srcNewLink').value.trim();
     const city = document.getElementById('srcNewCity').value.trim();
     const platform = document.querySelector('input[name="srcNewPlatform"]:checked').value;
     if (!link) { await alertAsync('Укажите ссылку'); return; }
+    // сначала локально (мгновенно, без похода на бэкенд) — второй раз
+    // серверная проверка ниже страхует от гонки/несовпадения нормализации.
+    if (findDuplicateSource(link)) {
+      haptic('warning');
+      await alertAsync('Такой источник уже есть в списке — не добавляю повторно.');
+      return;
+    }
     btn.disabled = true;
     const res = await apiPost({ action: 'add_source', link: link, platform: platform, city: city });
     btn.disabled = false;
     if (!res.ok) { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); return; }
+    if (res.duplicate) {
+      haptic('warning');
+      await alertAsync('Такой источник уже есть — не добавлено повторно.');
+      loadSources();
+      return;
+    }
     haptic('success');
     loadSources();
   });
