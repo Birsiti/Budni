@@ -1,4 +1,4 @@
-/* изменено 2026-09-22 12:10 */
+/* изменено 2026-09-22 15:20 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -67,9 +67,9 @@ body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
 .chart-svg.swipes .bar-a{ fill:var(--ok); }
 .bar-val{ fill:var(--ink-soft); font-size:8px; text-anchor:middle; font-family:'JetBrains Mono',monospace; }
 .bar-lbl{ fill:var(--ink-faint); font-size:8px; text-anchor:middle; font-family:'JetBrains Mono',monospace; }
-.chart-legend{ display:flex; gap:14px; margin-top:10px; font-size:11px; color:var(--ink-soft); }
-.chart-legend .lg{ display:flex; align-items:center; gap:5px; }
-.chart-legend .lg::before{ content:''; width:9px; height:9px; border-radius:2px; display:inline-block; }
+.chart-legend{ display:flex; flex-wrap:wrap; gap:20px; margin-top:10px; font-size:13px; color:var(--ink-soft); }
+.chart-legend .lg{ display:flex; align-items:center; gap:8px; }
+.chart-legend .lg::before{ content:''; width:10px; height:10px; border-radius:2px; display:inline-block; margin:0 2px; }
 .chart-legend .lg-a::before{ background:var(--ok); }
 .chart-legend .lg-b::before{ background:var(--surface-3); }
 
