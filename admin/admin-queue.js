@@ -1,4 +1,4 @@
-// изменено 2026-09-09 22:55
+// изменено 2026-09-22 15:40
 // ============================================================
 // Будни_BY admin — страница «Очередь» (admin-queue.html): что вот-вот
 // опубликуется. Убрать / вверх / опубликовать сейчас / сменить сферу /
@@ -24,6 +24,10 @@ function renderReview() {
   return '<div class="review-box">' +
     '<div class="section-title" style="margin-top:0">⚠ На проверке <span class="count">' + s.length + '</span></div>' +
     '<p class="rate-note" style="margin:0 0 10px;">Помечены как возможный скам — в группу не уходят, пока не решишь.</p>' +
+    '<div class="qactions" style="margin-bottom:14px;">' +
+      '<button class="qbtn ok" id="rvAllOk">✓ Одобрить все (' + s.length + ')</button>' +
+      '<button class="qbtn danger" id="rvAllNo">✕ Убрать все (' + s.length + ')</button>' +
+    '</div>' +
     s.map(function (v, i) {
       const meta = [v.city, v.channel].filter(Boolean).join(' · ');
       return '<div class="qcard">' +
@@ -117,6 +121,36 @@ function bindReview(el) {
       qAction(b, { action: 'reject_vacancy', id: v.id, sector: v.sector });
     });
   });
+
+  const allOk = el.querySelector('#rvAllOk'), allNo = el.querySelector('#rvAllNo');
+  if (allOk) allOk.addEventListener('click', function () {
+    bulkReview('approve_vacancy', allOk, allNo,
+      'Одобрить все ' + STATE.review.length + '? Все уйдут в очередь на публикацию.', 'Одобряю');
+  });
+  if (allNo) allNo.addEventListener('click', function () {
+    bulkReview('reject_vacancy', allNo, allOk,
+      'Убрать все ' + STATE.review.length + '? Ни одна не будет опубликована.', 'Убираю');
+  });
+}
+
+// массовое одобрение/отклонение блока «На проверке» — по одному запросу на
+// вакансию (тех же approve_vacancy/reject_vacancy, что и кнопки в карточке),
+// последовательно, чтобы не забрасывать API пачкой параллельных запросов.
+async function bulkReview(action, btn, otherBtn, confirmText, verb) {
+  const items = (STATE.review || []).slice();
+  if (!items.length) return;
+  if (!(await confirmAsync(confirmText))) return;
+  btn.disabled = true; if (otherBtn) otherBtn.disabled = true;
+  const total = items.length;
+  let done = 0, failed = 0;
+  for (const v of items) {
+    btn.textContent = verb + '… ' + (done + 1) + '/' + total;
+    const r = await apiPost({ action: action, id: v.id, sector: v.sector });
+    if (r.ok) done++; else failed++;
+  }
+  haptic(failed ? 'error' : 'success');
+  if (failed) await alertAsync('Готово, но ' + failed + ' из ' + total + ' не получилось — попробуй ещё раз для оставшихся.');
+  loadQueue();
 }
 
 function bindQueue(el) {
