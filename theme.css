@@ -1,3 +1,4 @@
+/* изменено 2026-09-22 12:10 */
 /* ============================================================
    Будни_BY — общий дизайн-каркас (client.html + admin.html).
    Токены светлой/тёмной темы + компоненты, которые выглядят одинаково
@@ -15,6 +16,7 @@
   --ink:#EDEFF0; --ink-soft:#8C949C; --ink-faint:#565D64;
   --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.14);
   --ok:#38A89D; --ok-soft:rgba(56,168,157,.14);
+  --gold:#D8B44C; --gold-soft:rgba(216,180,76,.14);
   --danger:#E5626A; --danger-soft:rgba(229,98,106,.12);
   --line:#2A2F35; --line-strong:#3A414A;
 }
@@ -23,6 +25,7 @@
   --ink:#171A1D; --ink-soft:#5B6570; --ink-faint:#98A1AA;
   --accent:#2AABEE; --accent-dark:#1B8FCB; --accent-soft:rgba(42,171,238,.12);
   --ok:#2E9B8F; --ok-soft:rgba(46,155,143,.12);
+  --gold:#A9790E; --gold-soft:rgba(169,121,14,.10);
   --danger:#D6505A; --danger-soft:rgba(214,80,90,.10);
   --line:#E2E6EA; --line-strong:#CDD3D9;
 }

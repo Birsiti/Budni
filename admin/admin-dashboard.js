@@ -1,4 +1,4 @@
-// изменено 2026-09-20 13:50
+// изменено 2026-09-22 12:10
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -253,6 +253,7 @@ function chartCard() {
         '<button type="button" data-m="publications"' + (m === 'publications' ? ' class="is-on"' : '') + '>Публикации</button>' +
         '<button type="button" data-m="new"' + (m === 'new' ? ' class="is-on"' : '') + '>Новые</button>' +
         '<button type="button" data-m="swipes"' + (m === 'swipes' ? ' class="is-on"' : '') + '>Свайпы</button>' +
+        '<button type="button" data-m="audience"' + (m === 'audience' ? ' class="is-on"' : '') + '>Аудитория</button>' +
       '</div>' +
       '<div class="seg seg-sm" id="chartPeriod">' +
         CHART_PERIODS.map(function (p) {
@@ -268,6 +269,14 @@ async function loadChart() {
   if (!area) return;
   const res = await apiPost({ action: 'get_chart', metric: _chart.metric, period: _chart.period });
   if (!area.isConnected) return;
+  if (_chart.metric === 'audience') {
+    if (!res.ok || !res.lines || !res.lines.length) {
+      area.innerHTML = '<div class="empty">Нет данных за период</div>';
+      return;
+    }
+    area.innerHTML = chartLines(res.lines);
+    return;
+  }
   if (!res.ok || !res.bars || !res.bars.length) {
     area.innerHTML = '<div class="empty">Нет данных за период</div>';
     return;
@@ -305,6 +314,69 @@ function chartSvg(bars, stacked) {
     ? '<div class="chart-legend"><span class="lg lg-a">лайки</span><span class="lg lg-b">скипы</span></div>'
     : '';
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart-svg' + (stacked ? ' swipes' : '') + '">' + parts.join('') + '</svg>' + legend;
+}
+
+// ---------- линейный график аудитории (бот / канал / группа) ----------
+// В отличие от chartSvg (бары, 1-2 серии за период) — здесь 3 растущие
+// величины, снимаются раз в сутки, поэтому точки могут отсутствовать
+// (null) в начале истории. Соединяем только соседние известные точки —
+// одиночная известная точка рисуется кружком без линии.
+var AUDIENCE_SERIES = [
+  ['botUsers', 'line-a', 'бот'],
+  ['channelMembers', 'line-b', 'канал'],
+  ['groupMembers', 'line-c', 'группа'],
+];
+
+function chartLines(lines) {
+  const W = 300, H = 104, base = 84, top = 10;
+  const n = lines.length, slot = W / n;
+  const cx = function (i) { return i * slot + slot / 2; };
+  const allVals = [];
+  AUDIENCE_SERIES.forEach(function (s) {
+    lines.forEach(function (l) { if (l[s[0]] != null) allVals.push(l[s[0]]); });
+  });
+  const max = Math.max.apply(null, allVals.concat([1]));
+  const parts = ['<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" class="chart-base"/>'];
+
+  AUDIENCE_SERIES.forEach(function (s) {
+    const key = s[0], cls = s[1];
+    const pts = [];
+    lines.forEach(function (l, i) {
+      if (l[key] == null) return;
+      pts.push([cx(i), base - (l[key] / max) * (base - top), i]);
+    });
+    // рвём линию, если между известными точками есть пропуск индексов
+    let run = [];
+    const flush = function () {
+      if (run.length > 1) {
+        parts.push('<polyline points="' + run.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '" class="' + cls + '"/>');
+      }
+      run.forEach(function (p) {
+        parts.push('<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.5" class="' + cls + '-dot"/>');
+      });
+      run = [];
+    };
+    pts.forEach(function (p, k) {
+      if (k > 0 && p[2] !== pts[k - 1][2] + 1) flush();
+      run.push(p);
+    });
+    flush();
+  });
+
+  lines.forEach(function (l, i) {
+    parts.push('<text x="' + cx(i).toFixed(1) + '" y="' + (H - 2) + '" class="bar-lbl">' + escapeHtml(l.label) + '</text>');
+  });
+
+  const last = function (key) {
+    for (let i = lines.length - 1; i >= 0; i--) { if (lines[i][key] != null) return lines[i][key]; }
+    return null;
+  };
+  const legend = '<div class="chart-legend">' + AUDIENCE_SERIES.map(function (s) {
+    const v = last(s[0]);
+    return '<span class="lg ' + s[1] + '">' + s[2] + (v != null ? ': ' + v : '') + '</span>';
+  }).join('') + '</div>';
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart-svg audience">' + parts.join('') + '</svg>' + legend;
 }
 
 // ---------- сворачиваемый список ----------

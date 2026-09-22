@@ -1,4 +1,4 @@
-/* изменено 2026-09-16 15:35 */
+/* изменено 2026-09-22 12:10 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -72,6 +72,18 @@ body{ padding-bottom: max(100px, calc(40px + var(--safe-bottom))); }
 .chart-legend .lg::before{ content:''; width:9px; height:9px; border-radius:2px; display:inline-block; }
 .chart-legend .lg-a::before{ background:var(--ok); }
 .chart-legend .lg-b::before{ background:var(--surface-3); }
+
+/* ---------- линейный график «Аудитория» (бот/канал/группа) ---------- */
+.chart-svg.audience polyline{ fill:none; stroke-width:1.6; stroke-linejoin:round; stroke-linecap:round; }
+.chart-svg.audience .line-a{ stroke:var(--accent); }
+.chart-svg.audience .line-b{ stroke:var(--ok); }
+.chart-svg.audience .line-c{ stroke:var(--gold); }
+.chart-svg.audience .line-a-dot{ fill:var(--accent); }
+.chart-svg.audience .line-b-dot{ fill:var(--ok); }
+.chart-svg.audience .line-c-dot{ fill:var(--gold); }
+.chart-legend .line-a::before{ background:var(--accent); }
+.chart-legend .line-b::before{ background:var(--ok); }
+.chart-legend .line-c::before{ background:var(--gold); }
 
 /* ---------- сворачиваемый список (сферы / каналы / города / свайпы) ---------- */
 .st-note{
