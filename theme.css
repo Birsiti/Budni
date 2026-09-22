@@ -1,4 +1,4 @@
-/* изменено 2026-09-22 16:10 */
+/* изменено 2026-09-22 17:00 */
 /* ============================================================
    Будни_BY — общий дизайн-каркас (client.html + admin.html).
    Токены светлой/тёмной темы + компоненты, которые выглядят одинаково
@@ -99,7 +99,7 @@ h1,h2,.label{ font-family:'Chakra Petch',sans-serif; }
   white-space:nowrap;
 }
 .badge-employer{ background:var(--ok-soft); color:var(--ok); }
-.badge-count{ background:var(--accent-soft); color:var(--accent-dark); font-family:'JetBrains Mono',monospace; }
+.badge-count{ background:var(--accent-soft); color:var(--accent-dark); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; }
 
 /* ---------- кнопки ---------- */
 .btn-primary{

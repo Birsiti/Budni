@@ -1,4 +1,4 @@
-// изменено 2026-09-22 16:10
+// изменено 2026-09-22 17:00
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
 // каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
@@ -79,7 +79,7 @@ function renderSources() {
       ? '<span class="badge badge-viber">ссылка не распознана</span>' : '';
     const uname = s.parsed_username ? '<span class="src-uname">→ @' + escapeHtml(s.parsed_username) + '</span>' : '';
     const count = showCount
-      ? '<span class="badge badge-count">' + (s.miniappCount || 0) + ' в мини-аппе</span>' : '';
+      ? '<span class="badge badge-count">' + (s.miniappCount || 0) + '</span>' : '';
     return '<div class="src-row">' +
       '<div class="src-info"><div class="src-link">' + escapeHtml(s.link) + '</div>' +
       '<div class="src-meta">' + platformBadge(s.platform) +
