@@ -1,4 +1,4 @@
-// изменено 2026-09-22 17:00
+// изменено 2026-09-30 23:30
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
 // каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
@@ -72,7 +72,7 @@ function renderSources() {
     '</div>' +
     '<div class="field"><label>Город (если канал по одному городу)</label><input type="text" id="srcNewCity" placeholder="например, Слуцк"></div>' +
     '<button class="btn btn-approve" id="srcAddBtn" style="width:100%; margin-bottom:4px;">+ Добавить в парсинг</button>' +
-    '<p style="color:var(--ink-faint); font-size:12px; margin:4px 0 0;">Подхватится парсером при следующем запуске.</p>';
+    '<p style="color:var(--ink-faint); font-size:14px; margin:4px 0 0;">Подхватится парсером при следующем запуске.</p>';
 
   function srcRow(s, actions, showCount) {
     const warn = s.platform === 'telegram' && !s.parsed_username

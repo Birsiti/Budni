@@ -1,4 +1,4 @@
-// изменено 2026-09-20 02:10
+// изменено 2026-09-30 23:50
 // ============================================================
 // Будни_BY admin — общее ядро всех страниц админки (admin*.html).
 // Токен моста, обёртки API, настройки, кнопка «назад», общий STATE.
@@ -44,3 +44,30 @@ function adminPageBoot(loadFn) {
   if (!requireToken()) return;
   loadFn();
 }
+
+// ---------- слово не влезло — шрифт меньше, а не перенос посреди слова (Денис, 2026-09-30) ----------
+// Перенос между словами обычный; если одно слово шире плитки (scrollWidth > clientWidth) —
+// уменьшаем шрифт именно этого элемента по 0.5px, не ниже 70% исходного. Тот же приём — в хабе Spihki.
+(function(){
+  var FIT_SEL = '.status-title, .stat-label, .stat-value, .seg button, .qbtn';
+  var queued = false;
+  function fit(){
+    queued = false;
+    document.querySelectorAll(FIT_SEL).forEach(function(el){
+      el.style.fontSize = '';
+      if (!el.clientWidth) return;
+      var fs = parseFloat(getComputedStyle(el).fontSize), min = fs * 0.7, guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && fs > min && guard++ < 30) {
+        fs -= 0.5; el.style.fontSize = fs + 'px';
+      }
+    });
+  }
+  function queue(){ if (!queued) { queued = true; requestAnimationFrame(fit); } }
+  function start(){
+    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, characterData: true });
+    window.addEventListener('resize', queue);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(queue);
+    queue();
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
