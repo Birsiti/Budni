@@ -1,4 +1,4 @@
-// изменено 2026-09-30 21:40
+// изменено 2026-09-30 23:58
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -55,18 +55,27 @@ var POS_SECTOR = {"механик": "Производство и строите�
 
 // ================= ФИЛЬТР ЛЕНТЫ =================
 var FILTER_KEY = 'budni_filter';
-var FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом' };
+var FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом', salaryMin: 0, q: '' };
 try { FILTER = Object.assign(FILTER, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}')); } catch (e) {}
 if (!Array.isArray(FILTER.sectors)) FILTER.sectors = [];
 if (FILTER.jobType !== 'вахта') FILTER.jobType = 'рядом';
+FILTER.salaryMin = parseInt(FILTER.salaryMin, 10) || 0;
+FILTER.q = String(FILTER.q || '');
 
-function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience; }
+function filterIsActive() { return !!FILTER.city || FILTER.sectors.length > 0 || !!FILTER.noExperience || FILTER.salaryMin > 0 || !!FILTER.q; }
 
 // город не действует для вахты — прячем поле в панели, чтобы не путать
 function applyJobTypeUI() {
   var r = document.querySelector('input[name="jobType"][value="' + FILTER.jobType + '"]');
   if (r) r.checked = true;
   document.getElementById('filterCityField').classList.toggle('hidden', FILTER.jobType === 'вахта');
+}
+
+// отмечает плитку «зарплата от …» (если такой суммы среди плиток нет — «Любая»)
+function setSalaryChip(v) {
+  const r = document.querySelector('input[name="salaryMin"][value="' + v + '"]') ||
+    document.querySelector('input[name="salaryMin"][value="0"]');
+  if (r) r.checked = true;
 }
 
 function saveFilter() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(FILTER)); } catch (e) {} }
@@ -79,6 +88,8 @@ function updateFilterSummary() {
   if (FILTER.city) parts.push(FILTER.city);
   if (FILTER.sectors.length) parts.push(FILTER.sectors.length + ' напр.');
   if (FILTER.noExperience) parts.push('без опыта');
+  if (FILTER.salaryMin > 0) parts.push('от ' + FILTER.salaryMin);
+  if (FILTER.q) parts.push('«' + FILTER.q + '»');
   document.getElementById('filterSummaryText').textContent = parts.join(', ');
 }
 
@@ -168,6 +179,9 @@ function applyFilterFromPanel() {
     .call(document.querySelectorAll('#filterSectors input:checked'))
     .map(function (i) { return i.value; });
   FILTER.noExperience = document.getElementById('filterNoExp').checked;
+  FILTER.q = document.getElementById('filterQ').value.trim();
+  const sal = document.querySelector('input[name="salaryMin"]:checked');
+  FILTER.salaryMin = sal ? (parseInt(sal.value, 10) || 0) : 0;
   const jt = document.querySelector('input[name="jobType"]:checked');
   FILTER.jobType = (jt && jt.value === 'вахта') ? 'вахта' : 'рядом';
   saveFilter();
@@ -180,9 +194,12 @@ function initFilterUI() {
   renderFilterSectorChips();
   document.getElementById('filterCity').value = FILTER.city;
   document.getElementById('filterNoExp').checked = !!FILTER.noExperience;
+  document.getElementById('filterQ').value = FILTER.q;
+  setSalaryChip(FILTER.salaryMin);
   applyJobTypeUI();
   updateFilterSummary();
   initCitySuggest();
+  bindSuggest(document.getElementById('filterQ'), document.getElementById('filterQSuggest'), BY_POSITIONS, 'contains');
 
   // формат (рядом/вахта) внутри панели — меняет только UI панели, применяется по «Показать»
   document.querySelectorAll('input[name="jobType"]').forEach(function (input) {
@@ -211,9 +228,11 @@ function initFilterUI() {
   });
   document.getElementById('filterReset').addEventListener('click', function () {
     haptic('light');
-    FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом' };
+    FILTER = { city: '', sectors: [], noExperience: false, jobType: 'рядом', salaryMin: 0, q: '' };
     saveFilter();
     document.getElementById('filterCity').value = '';
+    document.getElementById('filterQ').value = '';
+    setSalaryChip(0);
     document.getElementById('filterNoExp').checked = false;
     applyJobTypeUI();
     renderFilterSectorChips();
@@ -240,7 +259,7 @@ async function loadDeck() {
   wrap.innerHTML = '<div class="empty">Загрузка…</div>';
   let res;
   try {
-    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience, jobType: FILTER.jobType });
+    res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience, jobType: FILTER.jobType, salaryMin: FILTER.salaryMin, q: FILTER.q });
   } catch (e) { res = { ok: false, error: 'нет связи' }; }
   if (!res.ok) {
     document.getElementById('deckActions').classList.add('hidden');
@@ -269,6 +288,7 @@ async function loadDeck() {
     } catch (e) {}
   }
   DECK_INDEX = 0;
+  UNDO_STACK = [];
   DECK_SUBSCRIBED = res.subscribed !== false;
   renderCard();
 }
@@ -317,12 +337,12 @@ function linkifyContacts(escapedText, v) {
   var tel = telHref(v.phone);
   if (v.phone && tel) {
     var escPhone = escapeHtml(v.phone);
-    html = html.split(escPhone).join('<a href="tel:' + escapeHtml(tel) + '" class="tel-link" data-tel="' + escapeHtml(v.phone) + '">' + escPhone + '</a>');
+    html = html.split(escPhone).join('<a href="tel:' + escapeHtml(tel) + '" class="tel-link" data-vid="' + escapeHtml(v.id) + '" data-tel="' + escapeHtml(v.phone) + '">' + escPhone + '</a>');
   }
   if (v.contact_username) {
     var escUser = escapeHtml(v.contact_username);
     var handle = v.contact_username.replace(/^@/, '');
-    html = html.split(escUser).join('<a href="https://t.me/' + escapeHtml(handle) + '" target="_blank" rel="noopener">' + escUser + '</a>');
+    html = html.split(escUser).join('<a href="https://t.me/' + escapeHtml(handle) + '" class="tg-link" data-vid="' + escapeHtml(v.id) + '" target="_blank" rel="noopener">' + escUser + '</a>');
   }
   return html;
 }
@@ -346,6 +366,12 @@ function copyToClipboard(text) {
 // фолбэк: копируем номер и показываем его, tel: всё равно оставлен в href
 // на случай, если где-то у пользователя сработает и он сам
 document.addEventListener('click', function (e) {
+  // клик по контакту вакансии (телефон/@юзернейм) — фиксируем для воронки на пульте (без блокировки самого действия)
+  const c = e.target.closest('.tel-link, .tg-link');
+  if (c && c.dataset.vid) {
+    apiPost({ action: 'contact_click', vacancyId: c.dataset.vid, kind: c.classList.contains('tg-link') ? 'tg' : 'phone' })
+      .catch(function () {});
+  }
   const a = e.target.closest('.tel-link');
   if (!a) return;
   const num = a.dataset.tel;
@@ -415,6 +441,7 @@ function renderEmptyDeck() {
 }
 
 function renderCard() {
+  updateUndoBtn();
   const wrap = document.getElementById('deckWrap');
   if (DECK_INDEX >= DECK.length) {
     if (!DECK_SUBSCRIBED) { renderSubscribeGate(); return; }
@@ -446,6 +473,7 @@ function renderCard() {
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
       meta +
       '<div class="card-body">' + linkifyContacts(escapeHtml(v.clean_text || v.position || ''), v) + '</div>' +
+      '<button type="button" class="card-report-btn" aria-label="Пожаловаться: вакансия неактуальна">Неактуально</button>' +
       '<button type="button" class="card-share-btn" aria-label="Поделиться">↗</button>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
@@ -515,6 +543,8 @@ function finishSwipe(decision, card, dxAtRelease) {
 
   haptic(decision === 'like' ? 'success' : 'light');
   const v = DECK[DECK_INDEX];
+  UNDO_STACK.push({ id: v.id, decision: decision });
+  if (UNDO_STACK.length > 10) UNDO_STACK.shift();
   apiPost({
     action: 'record_swipe', telegramId: telegramUser.id, username: telegramUser.username || '',
     vacancyId: v.id, sector: v.sector, decision: decision,
@@ -533,7 +563,44 @@ function finishSwipe(decision, card, dxAtRelease) {
   setTimeout(function () { DECK_INDEX++; SWIPE_LOCKED = false; renderCard(); }, 240);
 }
 
+// ---------- «Вернуть» и «Неактуально» ----------
+var UNDO_STACK = [];   // последние свайпы текущей ленты: { id, decision }
+
+function updateUndoBtn() {
+  const b = document.getElementById('undoBtn');
+  if (b) b.disabled = UNDO_STACK.length === 0 || SWIPE_LOCKED;
+}
+
+async function undoLastSwipe() {
+  if (SWIPE_LOCKED || !UNDO_STACK.length || DECK_INDEX <= 0) return;
+  SWIPE_LOCKED = true;
+  const last = UNDO_STACK.pop();
+  haptic('light');
+  await apiPost({ action: 'undo_swipe', vacancyId: last.id }).catch(function () {});
+  if (last.decision === 'like') {
+    setFavCount(Math.max(0, (parseInt(document.getElementById('favCount').textContent, 10) || 0) - 1));
+  }
+  DECK_INDEX--;
+  SWIPE_LOCKED = false;
+  renderCard();
+}
+
+async function reportCurrent() {
+  if (SWIPE_LOCKED) return;
+  const card = document.getElementById('activeCard');
+  const v = DECK[DECK_INDEX];
+  if (!card || !v) return;
+  const ok = await confirmAsync('Пометить вакансию как неактуальную? Если так решат несколько человек, мы уберём её из ленты.');
+  if (!ok) return;
+  apiPost({ action: 'report_vacancy', vacancyId: v.id }).catch(function () {});
+  finishSwipe('skip', card, -1);   // для вас она пропущена
+}
+
 function bindDeckButtons() {
+  document.getElementById('undoBtn').onclick = undoLastSwipe;
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.card-report-btn')) { haptic('light'); reportCurrent(); }
+  });
   document.getElementById('skipBtn').onclick = function () {
     if (SWIPE_LOCKED) return;
     const card = document.getElementById('activeCard');

@@ -1,64 +1,33 @@
-// изменено 2026-09-30 16:20
+// изменено 2026-09-30 23:50
 // ============================================================
-// Будни_BY — поповер настроек (☀️ в шапке): тема + вибрация.
-// Общий для client.html и admin.html. Требует в разметке кнопку
-// #settingsBtn и пустой контейнер #settingsPop (позиционируется абсолютно
-// внутри .topbar с position:relative).
+// Будни_BY — переключатель темы в шапке (client.html и admin.html): одна кнопка без меню.
+// На тёмной теме горит солнце (тап → светлая), на светлой — луна (тап → тёмная).
+// Первый запуск следует теме Telegram/системы; после тапа выбор запоминается (PREFS.theme).
+// Вибрация включена всегда — отдельной настройки больше нет.
+// Требует в разметке кнопку #settingsBtn с двумя SVG (.ico-sun и .ico-moon — переключаются
+// CSS по data-theme, см. theme.css).
 // Глобалы из app.js: PREFS, savePrefs, applyTelegramTheme, haptic.
 // Экспортирует: initSettings.
 // ============================================================
 
 function initSettings() {
   const btn = document.getElementById('settingsBtn');
-  const pop = document.getElementById('settingsPop');
-  if (!btn || !pop) return;
-
-  function opt(group, val, label) {
-    return '<button class="set-opt" data-group="' + group + '" data-val="' + val + '">' + label + '</button>';
-  }
-
-  pop.innerHTML =
-    '<div class="set-label">Оформление</div>' +
-    '<div class="set-seg" data-group="theme">' +
-      opt('theme', '', 'Авто') + opt('theme', 'dark', 'Тёмная') + opt('theme', 'light', 'Светлая') +
-    '</div>' +
-    '<div class="set-label">Вибрация</div>' +
-    '<div class="set-seg" data-group="haptics">' +
-      opt('haptics', 'on', 'Вкл') + opt('haptics', 'off', 'Выкл') +
-    '</div>';
+  if (!btn) return;
 
   function refresh() {
-    pop.querySelectorAll('.set-opt').forEach(function (o) {
-      const g = o.getAttribute('data-group');
-      const v = o.getAttribute('data-val');
-      const on = g === 'theme' ? (PREFS.theme === v) : ((v === 'on') === PREFS.haptics);
-      o.classList.toggle('is-on', on);
-    });
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+    btn.setAttribute('aria-label', dark ? 'Включить светлую тему' : 'Включить тёмную тему');
+    btn.setAttribute('aria-pressed', dark ? 'false' : 'true');
   }
 
-  pop.querySelectorAll('.set-opt').forEach(function (o) {
-    o.addEventListener('click', function () {
-      const g = o.getAttribute('data-group');
-      const v = o.getAttribute('data-val');
-      if (g === 'theme') { PREFS.theme = v; savePrefs(); applyTelegramTheme(); }
-      else { PREFS.haptics = (v === 'on'); savePrefs(); }
-      refresh();
-      haptic('light');
-    });
-  });
-
-  function setOpen(open) {
-    pop.classList.toggle('hidden', !open);
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  }
-  btn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    setOpen(pop.classList.contains('hidden'));
+  btn.addEventListener('click', function () {
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+    PREFS.theme = dark ? 'light' : 'dark';
+    savePrefs();
+    applyTelegramTheme();
+    refresh();
     haptic('light');
   });
-  pop.addEventListener('click', function (e) { e.stopPropagation(); });
-  document.addEventListener('click', function () { setOpen(false); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
 
   refresh();
 }

@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-30 16:10
+   изменено 2026-09-30 23:59
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -141,6 +141,14 @@ body{ overscroll-behavior-y:contain; }
 }
 .card-share-btn:active{ background:var(--surface-3); }
 
+/* «Неактуально» — в нижнем левом углу карточки (правый угол занят «поделиться») */
+.card-report-btn{
+  position:absolute; bottom:14px; left:14px; z-index:3; min-height:40px; padding:0 14px; border-radius:20px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+}
+.card-report-btn:active{ background:var(--danger-soft); color:var(--danger); }
+
 .swipe-tag{
   position:absolute; top:18px; z-index:2;
   font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:16px;
@@ -158,6 +166,11 @@ body{ overscroll-behavior-y:contain; }
   font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:15px;
   display:flex; align-items:center; justify-content:center; gap:8px;
 }
+.round-btn.undo{
+  flex:none; width:56px; background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line);
+}
+.round-btn.undo svg{ width:22px; height:22px; }
+.round-btn.undo[disabled]{ opacity:.35; }
 .round-btn.skip{ background:var(--danger-soft); color:var(--danger); }
 .round-btn.like{ background:var(--ok-soft); color:var(--ok); }
 
@@ -320,3 +333,38 @@ body{ overscroll-behavior-y:contain; }
 .myvac-btn.danger{ background:var(--danger-soft); color:var(--danger); }
 .myvac-btn.ok{ background:var(--ok-soft); color:var(--ok); }
 .myvac-btn[disabled]{ opacity:.5; }
+
+/* ---------- заставка при запуске (счётчик объявлений в базе) ---------- */
+.splash{
+  position:fixed; inset:0; z-index:300; background:var(--bg);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:24px calc(24px + env(safe-area-inset-right, 0px)) calc(24px + var(--safe-bottom)) calc(24px + env(safe-area-inset-left, 0px));
+  transition:opacity .4s ease;
+}
+.splash.is-hiding{ opacity:0; pointer-events:none; }
+.splash::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(circle at 50% 38%, rgba(42,171,238,.22), rgba(42,171,238,0) 62%);
+}
+.splash-inner{ position:relative; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.splash-mark{
+  width:76px; height:76px; border-radius:22px; background:var(--accent); color:#0d1012;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:42px;
+  box-shadow:0 18px 40px -14px rgba(42,171,238,.65);
+  animation:splashPop .7s cubic-bezier(.16,.8,.28,1) both;
+}
+.splash-name{ font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:26px; margin-top:6px; }
+.splash-count{
+  font-weight:700; font-size:clamp(46px,15vw,68px); line-height:1.05; color:var(--accent);
+  font-variant-numeric:tabular-nums; margin-top:18px; min-width:3ch;
+}
+.splash-label{ font-size:15px; color:var(--ink-soft); max-width:260px; }
+.splash-bar{ width:120px; height:3px; border-radius:2px; background:var(--surface-3); overflow:hidden; margin-top:22px; }
+.splash-bar i{
+  display:block; height:100%; width:100%; background:var(--accent); transform-origin:left center;
+  animation:splashBar 3s linear both;
+}
+@keyframes splashPop{ from{ opacity:0; transform:scale(.8) translateY(8px); } to{ opacity:1; transform:none; } }
+@keyframes splashBar{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+@media (prefers-reduced-motion: reduce){ .splash-mark, .splash-bar i{ animation:none; } .splash-bar i{ transform:none; } }

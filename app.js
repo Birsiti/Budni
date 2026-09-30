@@ -1,4 +1,4 @@
-// изменено 2026-09-30 21:40
+// изменено 2026-09-30 23:50
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -26,15 +26,14 @@ var START_PARAM = (function () {
 })();
 var BOT_LINK = 'https://t.me/Budni_BY_Bot';
 
-// ---------- личные настройки посетителя (тема + вибрация), localStorage ----------
-// Тема: '' = как в Telegram/системе, 'light'/'dark' = ручной оверрайд.
+// ---------- личные настройки посетителя (тема), localStorage ----------
+// Тема: '' = как в Telegram/системе (пока человек не нажал на солнце/луну), 'light'/'dark' = его выбор.
 // Синхронно применяется и в инлайн-скрипте <head> (анти-вспышка) — там своя копия
-// логики чтения budni_prefs.theme.
-var PREFS = { theme: '', haptics: true };
+// логики чтения budni_prefs.theme. Вибрация включена всегда (настройки нет).
+var PREFS = { theme: '' };
 try {
   var _prefs = JSON.parse(localStorage.getItem('budni_prefs') || '{}');
   PREFS.theme = (_prefs.theme === 'light' || _prefs.theme === 'dark') ? _prefs.theme : '';
-  PREFS.haptics = _prefs.haptics !== false;
 } catch (e) {}
 
 function savePrefs() {
@@ -62,7 +61,6 @@ var SECTORS = [
 var SECTOR_LIST = SECTORS.map(function (s) { return s[0]; });
 
 function haptic(style) {
-  if (!PREFS.haptics) return; // выключено в настройках
   if (tg && tg.HapticFeedback) {
     if (['success', 'error', 'warning'].includes(style)) tg.HapticFeedback.notificationOccurred(style);
     else tg.HapticFeedback.impactOccurred(style || 'light');

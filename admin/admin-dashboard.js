@@ -1,4 +1,4 @@
-// изменено 2026-09-30 21:30
+// изменено 2026-09-30 23:59
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -164,6 +164,7 @@ async function loadDashboard() {
   renderBody();
   loadSwipeInto();     // фоном
   loadTrafficInto();   // фоном
+  loadFunnelInto();    // фоном
   loadSourcesInto();   // фоном
 }
 
@@ -225,6 +226,7 @@ function renderBody() {
     collapsibleCard('sectors', sectorRows(s), sectorTotal(s)) +
     '<div id="swipeBox"><div class="section-title">Свайпы</div><div class="card"><div class="empty">Загрузка…</div></div></div>' +
     '<div id="trafficBox"></div>' +
+    '<div id="funnelBox"></div>' +
     '<div class="section-title">По каналам</div>' +
     collapsibleCard('channels', breakdownRows(s.byChannel, 'brow-channel')) +
     '<div class="section-title">По городам</div>' +
@@ -535,7 +537,7 @@ async function setRate(action, value, stateKey, resKey) {
   document.querySelectorAll('.rate-opt').forEach(function (b) { b.disabled = true; });
   const p = {}; p.action = action; p.n = value;
   const res = await apiPost(p);
-  if (res.ok) { D[stateKey] = res[resKey]; haptic('success'); renderStatusLine(); renderBody(); loadSwipeInto(); loadTrafficInto(); }
+  if (res.ok) { D[stateKey] = res[resKey]; haptic('success'); renderStatusLine(); renderBody(); loadSwipeInto(); loadTrafficInto(); loadFunnelInto(); }
   else { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); document.querySelectorAll('.rate-opt').forEach(function (b) { b.disabled = false; }); }
 }
 
@@ -608,6 +610,27 @@ async function loadTrafficInto() {
   });
   box.innerHTML = '<div class="section-title">Откуда приходят <span class="st-note">новые за 30 дн.: ' + (res.total || 0) + '</span></div>' +
     collapsibleCard('traffic', html);
+}
+
+// ---------- воронка за 30 дней: пришли → свайпали → лайкнули → нажали на контакт ----------
+async function loadFunnelInto() {
+  const box = document.getElementById('funnelBox');
+  if (!box) return;
+  const r = await apiPost({ action: 'funnel_stats', days: 30 }).catch(function () { return { ok: false }; });
+  if (!r.ok) { box.innerHTML = ''; return; }   // старый бэкенд без funnel_stats — блок не показываем
+  function num(v) { return v == null ? '–' : v; }
+  const rows = [
+    ['Новых людей', num(r.newUsers)],
+    ['Заходили (всего)', num(r.activeUsers)],
+    ['Свайпали', num(r.swipers)],
+    ['Лайкнули', num(r.likers)],
+    ['Нажали на контакт', num(r.contactUsers) + (r.contactClicks != null ? ' <span class="dim">· ' + r.contactClicks + ' нажатий</span>' : '')],
+    ['Жалоб «неактуально»', num(r.reports)],
+  ].map(function (x) {
+    return '<div class="brow"><div class="brow-top"><span>' + x[0] + '</span><span class="brow-num mono">' + x[1] + '</span></div></div>';
+  });
+  box.innerHTML = '<div class="section-title">Воронка <span class="st-note">за 30 дн.</span></div>' +
+    '<div class="card">' + rows.join('') + '</div>';
 }
 
 // ---------- счётчик источников на рассмотрении ----------

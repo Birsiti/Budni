@@ -45,7 +45,7 @@ async function loadFavorites() {
       // tel-link + data-tel — тот же класс, что в deck.js::linkifyContacts, ловится
       // общим делегированным обработчиком клика там же (tel: не открывает набор
       // номера в этой Telegram WebView — обработчик копирует номер в буфер)
-      (tel ? '<a class="fav-contact fav-tel tel-link" href="tel:' + escapeHtml(tel) + '" data-tel="' + escapeHtml(v.phone) + '">📞 ' + escapeHtml(v.phone) + ' — позвонить</a>' : '') +
+      (tel ? '<a class="fav-contact fav-tel tel-link" href="tel:' + escapeHtml(tel) + '" data-vid="' + escapeHtml(v.id) + '" data-tel="' + escapeHtml(v.phone) + '">📞 ' + escapeHtml(v.phone) + ' — позвонить</a>' : '') +
       (otherContact ? '<div class="fav-contact">' + escapeHtml(otherContact) + '</div>' : '') +
       '<div class="fav-full" id="favFull-' + i + '">' +
         '<div class="fav-fulltext">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
