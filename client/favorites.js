@@ -1,10 +1,10 @@
-// изменено 2026-09-20 02:15
+// изменено 2026-09-30 15:55
 // ============================================================
 // Будни_BY client — «Избранное» (свайп вправо). Открывается ❤️ в шапке.
 // Тап по карточке — раскрывает полный текст вакансии + «Поделиться».
 // ✕ — убрать из избранного. Телефон — ссылкой tel: (тап = позвонить).
 // Глобалы из app.js: apiPost (client.html), escapeHtml, haptic, confirmAsync,
-//   alertAsync, telHref, shareText.
+//   alertAsync, telHref, shareText, fmtVacDate.
 // Экспортирует: loadFavorites.
 // ============================================================
 
@@ -16,7 +16,11 @@ async function loadFavorites() {
   let res;
   try { res = await apiPost({ action: 'get_favorites' }); }
   catch (e) { res = { ok: false }; }
-  if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
+  if (!res.ok) {
+    el.innerHTML = '<div class="empty">Не получилось загрузить избранное<br><button type="button" class="btn-secondary" id="favRetryBtn" style="margin-top:14px;">Повторить</button></div>';
+    document.getElementById('favRetryBtn').addEventListener('click', function () { haptic('light'); loadFavorites(); });
+    return;
+  }
   FAVS = res.favorites || [];
   setFavCount(FAVS.length);
   if (FAVS.length === 0) {
@@ -26,6 +30,7 @@ async function loadFavorites() {
 
   el.innerHTML = FAVS.map(function (v, i) {
     const meta = [v.company, v.city, v.salary_text].filter(Boolean).join(' · ');
+    const dateTxt = fmtVacDate(v.last_seen_at);
     const tel = telHref(v.phone);
     const otherContact = [v.contact_username, v.email].filter(Boolean).join(' · ');
     return '<div class="fav-card">' +
@@ -33,6 +38,7 @@ async function loadFavorites() {
         '<div class="fav-headtext">' +
           '<div class="fav-position">' + escapeHtml(v.position || '(без названия)') + '</div>' +
           (meta ? '<div class="fav-meta">' + escapeHtml(meta) + '</div>' : '') +
+          (dateTxt ? '<div class="fav-date">' + escapeHtml(dateTxt) + '</div>' : '') +
         '</div>' +
         '<button class="fav-x" data-remove="' + i + '" aria-label="Убрать из избранного">✕</button>' +
       '</div>' +

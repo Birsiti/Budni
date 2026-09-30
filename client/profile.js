@@ -1,10 +1,11 @@
-// изменено 2026-09-19 13:45
+// изменено 2026-09-30 15:40
 // ============================================================
 // Будни_BY client — анкета соискателя как пошаговый мастер (3 шага) +
 // карточка-сводка заполненной анкеты. Вкладка «Анкета».
 // Мастер — оверлей #anketaWizard поверх всего, с прогресс-баром и
-// нативной tg.BackButton. Открывается сам при первом входе (✕ на шаге 1
-// закрывает — вакансии можно листать без регистрации).
+// нативной tg.BackButton. Сам НЕ открывается и анкету не навязывает: она нужна
+// только тому, кто хочет опубликовать своё объявление «Ищу подработку».
+// Телефон спрашиваем только на шаге 3 и только при включённой публикации.
 // Бэкенд не меняется: get_profile / save_profile.
 // Глобалы: apiPost (client.html), haptic, escapeHtml, alertAsync, tg,
 //   telegramUser, SECTORS, bindPhoneMask, formatPhoneTail,
@@ -14,7 +15,6 @@
 
 var EMPLOYMENT_OPTIONS = ['Любая', 'Подработка', 'Постоянная', 'Вахта'];
 var WIZ_TOTAL = 3;
-var DISMISS_KEY = 'budni_anketa_dismissed';
 
 var profileExists = false;
 var wizStep = 1;
@@ -33,23 +33,16 @@ function updateAgeHint() {
   el.textContent = a ? plYears(a) : '';
 }
 
-var NUDGE_KEY = 'budni_nudge_hidden';
-
 function initProfile() {
   document.getElementById('profileStartBtn').addEventListener('click', function () { openWizard(); });
   document.getElementById('wizNav').addEventListener('click', wizardBack);
   document.getElementById('wizNext').addEventListener('click', wizardNext);
-  document.getElementById('deckNudgeGo').addEventListener('click', function () { openWizard(); });
-  document.getElementById('deckNudgeX').addEventListener('click', function () {
-    try { localStorage.setItem(NUDGE_KEY, '1'); } catch (e) {}
-    document.getElementById('deckNudge').classList.add('hidden');
-    haptic('light');
-  });
 }
 
 // ---------- мастер ----------
-function openWizard() {
-  wizStep = 1;
+// step — с какого шага открыть (3 — когда надо только добавить телефон для публикации)
+function openWizard(step) {
+  wizStep = step || 1;
   renderWizardStep();
   document.getElementById('anketaWizard').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -74,7 +67,6 @@ function bindTgBack(show) {
 function wizardBack() {
   haptic('light');
   if (wizStep === 1) {
-    try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
     closeWizard();
     return;
   }
@@ -98,22 +90,20 @@ function renderWizardStep() {
   const body = document.getElementById('wizBody');
   document.getElementById('wizBar').style.width = Math.round((wizStep / WIZ_TOTAL) * 100) + '%';
   document.getElementById('wizStep').textContent = wizStep + ' / ' + WIZ_TOTAL;
-  document.getElementById('wizNav').textContent = wizStep === 1 ? '✕' : '‹';
+  const nav = document.getElementById('wizNav');
+  nav.textContent = wizStep === 1 ? '✕' : '‹';
+  nav.setAttribute('aria-label', wizStep === 1 ? 'Закрыть' : 'Назад');
   document.getElementById('wizNext').textContent = wizStep === WIZ_TOTAL ? 'Готово' : 'Далее';
 
   if (wizStep === 1) {
     body.innerHTML =
       '<h2>Как вас зовут?</h2>' +
       '<p class="wsub">Имя увидит работодатель, если вы опубликуете анкету.</p>' +
-      '<div class="field"><label>Имя</label><input type="text" id="wName" placeholder="как к вам обращаться"></div>' +
-      '<div class="field"><label>Дата рождения <span class="lbl-soft">· необязательно</span></label>' +
+      '<div class="field"><label for="wName">Имя</label><input type="text" id="wName" placeholder="как к вам обращаться" autocomplete="name"></div>' +
+      '<div class="field"><label for="wBirth">Дата рождения <span class="lbl-soft">· необязательно</span></label>' +
         '<input type="date" id="wBirth" max="' + birthBound(14) + '" min="' + birthBound(80) + '">' +
         '<p class="hint" id="wAgeHint" style="color:var(--ink-soft)"></p></div>' +
-      '<div class="field"><label>Телефон <span class="lbl-soft">· необязательно</span></label>' +
-        '<div class="phone-field"><span class="phone-prefix">+375</span>' +
-        '<input type="tel" class="phone-input" id="wPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12"></div>' +
-        '<p class="profile-note">Нужен, только если хотите публиковать анкету в группе. Для отклика на чужую вакансию — не обязателен.</p></div>' +
-      '<div class="field suggest-field"><label>Город</label>' +
+      '<div class="field suggest-field"><label for="wCity">Город</label>' +
         '<input type="text" id="wCity" placeholder="например, Минск" autocomplete="off">' +
         '<div class="city-suggest hidden" id="wCitySuggest"></div></div>';
     document.getElementById('wName').value = WIZ.name;
@@ -123,9 +113,6 @@ function renderWizardStep() {
     bi.value = WIZ.birth || '';
     bi.addEventListener('change', function () { WIZ.birth = bi.value; updateAgeHint(); });
     updateAgeHint();
-    const ph = document.getElementById('wPhone');
-    ph.value = formatPhoneTail(WIZ.phone) || '';
-    bindPhoneMask(ph);
   } else if (wizStep === 2) {
     body.innerHTML =
       '<h2>Что ищете?</h2>' +
@@ -151,8 +138,21 @@ function renderWizardStep() {
         '<textarea id="wAbout" placeholder="например: 5 лет за рулём кат. B/C, готов на подработку по выходным"></textarea></div>' +
       '<label class="check-row"><input type="checkbox" id="wPublish"' + (WIZ.publish ? ' checked' : '') + '>' +
         '<span>Показывать мою анкету в группе, топик «Ищу подработку» — работодатели смогут написать первыми</span></label>' +
-      '<p class="profile-note">Телефон в группе виден только если включить публикацию. Для отклика на чужую вакансию номер не нужен.</p>';
+      '<div class="field' + (WIZ.publish ? '' : ' hidden') + '" id="wPhoneField">' +
+        '<label for="wPhone">Телефон для связи</label>' +
+        '<div class="phone-field"><span class="phone-prefix">+375</span>' +
+        '<input type="tel" class="phone-input" id="wPhone" inputmode="numeric" placeholder="29-123-45-67" maxlength="12" autocomplete="tel-national"></div>' +
+        '<p class="profile-note">Номер увидят работодатели в группе. Если не хотите его показывать — снимите галочку выше: анкета сохранится только у вас.</p>' +
+      '</div>';
     document.getElementById('wAbout').value = WIZ.about;
+    const ph = document.getElementById('wPhone');
+    ph.value = formatPhoneTail(WIZ.phone) || '';
+    bindPhoneMask(ph);
+    const pub = document.getElementById('wPublish');
+    pub.addEventListener('change', function () {
+      document.getElementById('wPhoneField').classList.toggle('hidden', !pub.checked);
+      haptic('light');
+    });
   }
 }
 
@@ -163,13 +163,8 @@ function collectStep(validate) {
     if (!el) return true;
     WIZ.name = el.value.trim();
     WIZ.birth = document.getElementById('wBirth').value || '';
-    const digits = document.getElementById('wPhone').value.replace(/\D/g, '');
-    WIZ.phone = digits ? '+375' + digits : '';
     WIZ.city = document.getElementById('wCity').value.trim();
-    if (validate) {
-      if (!WIZ.name) { alertAsync('Как к вам обращаться?'); return false; }
-      if (digits.length > 0 && digits.length !== 9) { alertAsync('Проверьте номер телефона или оставьте поле пустым'); return false; }
-    }
+    if (validate && !WIZ.name) { alertAsync('Как к вам обращаться?'); el.focus(); return false; }
   } else if (wizStep === 2) {
     const grid = document.getElementById('wSectors');
     if (!grid) return true;
@@ -182,6 +177,12 @@ function collectStep(validate) {
     if (!ab) return true;
     WIZ.about = ab.value.trim();
     WIZ.publish = document.getElementById('wPublish').checked;
+    const digits = document.getElementById('wPhone').value.replace(/\D/g, '');
+    if (WIZ.publish) {
+      // телефон нужен только для публикации в группе — иначе работодателю не связаться
+      if (validate && digits.length !== 9) { alertAsync('Чтобы показать анкету в группе, укажите телефон — или снимите галочку'); document.getElementById('wPhone').focus(); return false; }
+      if (digits.length === 9) WIZ.phone = '+375' + digits;
+    }
   }
   return true;
 }
@@ -213,7 +214,6 @@ async function finishWizard() {
   haptic('success');
   profileExists = true;
   WIZ.publish = !!res.published;
-  try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
   closeWizard();
   renderProfileView();
 
@@ -230,21 +230,13 @@ async function finishWizard() {
 function renderProfileView() {
   const cta = document.getElementById('profileCTA');
   const sum = document.getElementById('profileSummary');
-  const dot = document.getElementById('profileDot');
-  const nudge = document.getElementById('deckNudge');
-
-  let nudgeHidden = false;
-  try { nudgeHidden = !!localStorage.getItem(NUDGE_KEY); } catch (e) {}
-  if (nudge) nudge.classList.toggle('hidden', profileExists || nudgeHidden);
 
   if (!profileExists) {
     cta.classList.remove('hidden');
     sum.classList.add('hidden');
-    if (dot) dot.classList.remove('hidden');
     return;
   }
   cta.classList.add('hidden');
-  if (dot) dot.classList.add('hidden');
   sum.classList.remove('hidden');
 
   const sectorsLine = WIZ.sectors.length ? WIZ.sectors.join(', ') : '—';
@@ -269,6 +261,8 @@ function renderProfileView() {
 }
 
 async function togglePublish() {
+  // включаем публикацию, а телефона нет — сначала спросим его (шаг 3 мастера)
+  if (!WIZ.publish && !WIZ.phone) { openWizard(3); return; }
   const btn = document.getElementById('psumToggle');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
@@ -309,7 +303,6 @@ async function loadProfile() {
     WIZ.publish = !!p.published;
   }
   renderProfileView();
-  // мастер НЕ открываем сам — лента вакансий показывается сразу, без оверлея
-  // поверх шапки. Заполнить анкету — кнопкой на вкладке «Анкета» (там же точка-
-  // индикатор, пока не заполнено) или строкой-подсказкой над лентой.
+  // мастер НЕ открываем сам и анкету нигде не навязываем — она нужна только
+  // тому, кто хочет разместить своё объявление; кнопка — на вкладке «Профиль».
 }

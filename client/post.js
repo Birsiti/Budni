@@ -1,10 +1,10 @@
-// изменено 2026-09-20 02:15
+// изменено 2026-09-30 16:00
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
 // автоподстановка имени/телефона из листа КОНТАКТЫ, продление по ссылке.
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, alertAsync,
-//   confirmAsync, telegramUser, SECTORS, bindPhoneMask, formatPhoneTail.
+//   confirmAsync, telegramUser, SECTORS, bindPhoneMask, formatPhoneTail, fmtVacDate.
 // Глобалы из deck.js: BY_CITIES, BY_POSITIONS, bindSuggest.
 // Экспортирует: initPost, loadMyVacancies, prefillFromContact, handleRenewParam.
 // ============================================================
@@ -109,8 +109,12 @@ async function submitVacancy() {
   const btn = document.getElementById('postSubmitBtn');
   const position = document.getElementById('fPosition').value.trim();
   const phoneDigits = postPhoneInput.value.replace(/\D/g, '');
-  if (!position) { await alertAsync('Укажите должность'); return; }
-  if (phoneDigits.length !== 9) { await alertAsync('Проверьте номер телефона'); return; }
+  if (!position) { await alertAsync('Укажите должность'); document.getElementById('fPosition').focus(); return; }
+  if (phoneDigits.length !== 9) {
+    await alertAsync('Проверьте номер телефона — он нужен, чтобы соискатели могли вам позвонить');
+    postPhoneInput.focus();
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Отправляем…';
@@ -169,6 +173,7 @@ async function loadMyVacancies() {
   list.innerHTML = items.map(function (v) {
     const st = MYVAC_STATUS[v.status] || MYVAC_STATUS.active;
     const meta = [v.company, v.city, v.salary_text].filter(Boolean).join(' · ');
+    const dateTxt = fmtVacDate(v.first_seen_at);
     let action = '';
     if (v.status === 'active') {
       action = '<button class="myvac-btn danger" data-close="' + escapeHtml(v.id) + '">Снять с публикации</button>';
@@ -181,6 +186,7 @@ async function loadMyVacancies() {
         '<span class="myvac-badge ' + st[1] + '">' + st[0] + '</span>' +
       '</div>' +
       (meta ? '<div class="myvac-meta">' + escapeHtml(meta) + '</div>' : '') +
+      (dateTxt ? '<div class="myvac-meta">Подана ' + escapeHtml(dateTxt.replace(/^от /, '').replace(/^./, function (c) { return c.toLowerCase(); })) + '</div>' : '') +
       (v.status === 'active' && v.repost_time
         ? '<div class="myvac-meta">Публикуется каждый день в ' + escapeHtml(v.repost_time) + '</div>' : '') +
       action +

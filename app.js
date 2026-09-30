@@ -1,4 +1,4 @@
-// изменено 2026-09-20 02:10
+// изменено 2026-09-30 15:10
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -8,7 +8,7 @@
 // объявления ниже становятся глобальными и доступны каждому модулю.
 // Экспортирует: tg, telegramUser, APPS_SCRIPT_URL, SECTORS, SECTOR_LIST,
 // haptic, applyTelegramTheme, initTelegram, alertAsync, confirmAsync,
-// escapeHtml, apiCall, bindPhoneMask, formatPhoneTail.
+// escapeHtml, apiCall, bindPhoneMask, formatPhoneTail, fmtVacDate.
 // ============================================================
 
 var tg = window.Telegram ? window.Telegram.WebApp : null;
@@ -194,4 +194,29 @@ function shareText(text) {
     '&text=' + encodeURIComponent(String(text || '').slice(0, 3500));
   if (tg && tg.openTelegramLink) { try { tg.openTelegramLink(url); return; } catch (e) {} }
   window.open(url, '_blank');
+}
+
+// ---------- дата вакансии для карточек: «Сегодня» / «Вчера» / «от 28 сентября» ----------
+// iso — last_seen_at с бэкенда, т.е. дата ПОСЛЕДНЕГО появления объявления
+// (повторные публикации одного и того же объявления сдвигают её вперёд).
+// Считаем по минскому времени, а не по часовому поясу телефона.
+function minskYMD(d) {
+  try {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Minsk', year: 'numeric', month: '2-digit', day: '2-digit' })
+      .format(d).split('-');
+    return [+p[0], +p[1], +p[2]];
+  } catch (e) {
+    return [d.getFullYear(), d.getMonth() + 1, d.getDate()];
+  }
+}
+
+function fmtVacDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const a = minskYMD(d), b = minskYMD(new Date());
+  const days = Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+  if (days <= 0) return 'Сегодня';
+  if (days === 1) return 'Вчера';
+  return 'от ' + a[2] + ' ' + RU_MONTHS_GEN[a[1] - 1] + (a[0] !== b[0] ? ' ' + a[0] : '');
 }

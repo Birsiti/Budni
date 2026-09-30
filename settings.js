@@ -1,3 +1,4 @@
+// изменено 2026-09-30 16:20
 // ============================================================
 // Будни_BY — поповер настроек (☀️ в шапке): тема + вибрация.
 // Общий для client.html и admin.html. Требует в разметке кнопку
@@ -46,13 +47,18 @@ function initSettings() {
     });
   });
 
+  function setOpen(open) {
+    pop.classList.toggle('hidden', !open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
-    pop.classList.toggle('hidden');
+    setOpen(pop.classList.contains('hidden'));
     haptic('light');
   });
   pop.addEventListener('click', function (e) { e.stopPropagation(); });
-  document.addEventListener('click', function () { pop.classList.add('hidden'); });
+  document.addEventListener('click', function () { setOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
 
   refresh();
 }

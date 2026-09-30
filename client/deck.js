@@ -1,10 +1,10 @@
-// изменено 2026-09-20 13:50
+// изменено 2026-09-30 15:50
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
 // открывается пилюлей-триггером наверху ленты (#filterPillBtn).
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, telegramUser,
-//   SECTORS, telHref, alertAsync, shareText.
+//   SECTORS, telHref, alertAsync, shareText, fmtVacDate.
 // Глобалы из client.html: setFavCount, flashFavHeart.
 // Экспортирует: loadDeck, FILTER, filterIsActive, updateFilterSummary,
 //   applyProfileToFilter, applyFilterFromPanel (последняя — таб «Вакансии» в
@@ -105,7 +105,10 @@ function applyProfileToFilter(city, sectors) {
   return true;
 }
 
-function closeFilterPanel() { document.getElementById('filterPanel').classList.add('hidden'); }
+function closeFilterPanel() {
+  document.getElementById('filterPanel').classList.add('hidden');
+  document.getElementById('filterPillBtn').setAttribute('aria-expanded', 'false');
+}
 
 // Подсказка по вводу под текстовым полем — свой дропдаун, не <datalist>
 // (в Telegram iOS WebView он ненадёжен/не показывается). Общая для города
@@ -197,6 +200,7 @@ function initFilterUI() {
     // закрыта — просто открываем, сохранять пока нечего
     if (document.getElementById('filterPanel').classList.contains('hidden')) {
       document.getElementById('filterPanel').classList.remove('hidden');
+      document.getElementById('filterPillBtn').setAttribute('aria-expanded', 'true');
     } else {
       applyFilterFromPanel();
     }
@@ -237,9 +241,16 @@ async function loadDeck() {
     res = await apiPost({ action: 'get_deck', city: FILTER.city, sectors: FILTER.sectors, noExperience: FILTER.noExperience, jobType: FILTER.jobType });
   } catch (e) { res = { ok: false, error: 'нет связи' }; }
   if (!res.ok) {
-    wrap.innerHTML = '<div class="empty">Не получилось загрузить вакансии' +
-      (res.error ? '<br><span class="mono" style="font-size:12px;opacity:.7">' + escapeHtml(res.error) + '</span>' : '') +
+    document.getElementById('deckActions').classList.add('hidden');
+    wrap.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-ico">📡</div>' +
+        '<div class="empty-title">Не получилось загрузить вакансии</div>' +
+        '<p class="empty-sub">Проверьте интернет и попробуйте ещё раз.' +
+          (res.error ? '<br><span class="mono" style="font-size:12px;opacity:.7">' + escapeHtml(res.error) + '</span>' : '') + '</p>' +
+        '<button type="button" class="btn-primary" id="deckRetryBtn">Повторить</button>' +
       '</div>';
+    document.getElementById('deckRetryBtn').addEventListener('click', function () { haptic('light'); loadDeck(); });
     return;
   }
   DECK = res.deck || [];
@@ -399,19 +410,27 @@ function renderCard() {
   document.getElementById('deckActions').classList.remove('hidden');
   const v = DECK[DECK_INDEX];
 
-  // на карточке — только «сигнальные» бейджи, которых нет в тексте поста.
-  // «Без опыта» убран — дублирует и сводку в пилюле фильтра, и «Требования»
-  // в самом тексте поста, лишняя строка над карточкой.
+  // над текстом поста — строка-«шапка»: дата объявления (слева) и «сигнальные»
+  // бейджи, которых нет в самом тексте (справа). Дата — last_seen_at: если то же
+  // объявление опубликовали снова, показываем последнюю дату (см. get_deck).
+  // «Без опыта» в бейджах нет — дублирует пилюлю фильтра и «Требования» в тексте.
+  const dateTxt = fmtVacDate(v.last_seen_at);
   const badges = [
     v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая</span>' : '',
     v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '',
   ].filter(Boolean).join('');
+  const meta = (dateTxt || badges)
+    ? '<div class="card-meta">' +
+        (dateTxt ? '<span class="card-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>' + escapeHtml(dateTxt) + '</span>' : '<span></span>') +
+        (badges ? '<span class="card-badges">' + badges + '</span>' : '') +
+      '</div>'
+    : '';
 
   wrap.innerHTML =
     '<div class="card" id="activeCard">' +
       '<div class="swipe-tag like" id="tagLike">НРАВИТСЯ</div>' +
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
-      (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
+      meta +
       '<div class="card-body">' + linkifyContacts(escapeHtml(v.clean_text || v.position || ''), v) + '</div>' +
       '<button type="button" class="card-share-btn" aria-label="Поделиться">↗</button>' +
     '</div>';

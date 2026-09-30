@@ -1,4 +1,4 @@
-/* изменено 2026-09-22 17:00 */
+/* изменено 2026-09-30 16:15 */
 /* ============================================================
    Будни_BY — общий дизайн-каркас (client.html + admin.html).
    Токены светлой/тёмной темы + компоненты, которые выглядят одинаково
@@ -42,6 +42,13 @@ body{
 h1,h2,.label{ font-family:'Chakra Petch',sans-serif; }
 .mono{ font-family:'JetBrains Mono',monospace; }
 .hidden{ display:none !important; }
+button{ cursor:pointer; touch-action:manipulation; }
+/* видимый фокус для клавиатуры/скринридера (в Telegram на телефоне не мешает — только :focus-visible) */
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.chip input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+.field > input:focus-visible, .field > textarea:focus-visible{ outline-offset:0; border-color:var(--accent); }
+.phone-field:focus-within{ border-color:var(--accent); }
+.phone-input:focus-visible{ outline:none; }
 
 .content{ padding:0 16px; }
 
@@ -155,6 +162,11 @@ h1,h2,.label{ font-family:'Chakra Petch',sans-serif; }
   color:var(--ink-soft); font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
 }
 .set-opt.is-on{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.18); }
+
+/* уважаем системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
 
 /* ---------- спиннер ---------- */
 .spinner{
