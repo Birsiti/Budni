@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- изменено 2026-09-30 21:40 -->
+<!-- изменено 2026-09-30 22:10 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -100,13 +100,15 @@
     <p class="section-sub">
       Пришлём в бот все новые вакансии, которые подходят под город и/или ключевое слово (например: город «Слуцк», слово «водитель»)
     </p>
-    <div class="field">
+    <div class="field suggest-field">
       <label for="subCity">Город</label>
       <input type="text" id="subCity" placeholder="например, Слуцк" autocomplete="off">
+      <div class="city-suggest hidden" id="subCitySuggest"></div>
     </div>
-    <div class="field">
-      <label for="subKeyword">Ключевое слово</label>
+    <div class="field suggest-field">
+      <label for="subKeyword">Профессия или ключевое слово</label>
       <input type="text" id="subKeyword" placeholder="например, водитель" autocomplete="off">
+      <div class="city-suggest hidden" id="subKeywordSuggest"></div>
     </div>
     <button class="btn-primary" id="subAddBtn" style="margin-bottom:20px;">Подписаться</button>
     <div id="subsList"></div>
@@ -140,9 +142,10 @@
       <label for="srcLink">Ссылка на канал/группу</label>
       <input type="text" id="srcLink" placeholder="например, t.me/nazvanie_kanala" autocomplete="off" autocapitalize="off">
     </div>
-    <div class="field">
+    <div class="field suggest-field">
       <label for="srcCity">Город (если знаете)</label>
       <input type="text" id="srcCity" placeholder="например, Слуцк" autocomplete="off">
+      <div class="city-suggest hidden" id="srcCitySuggest"></div>
     </div>
     <button class="btn-primary" id="srcSubmitBtn">Предложить источник</button>
   </div>
@@ -255,7 +258,7 @@
 <script src="../settings.js?v=20260930"></script>
 <script src="deck.js?v=20260930b"></script>
 <script src="favorites.js?v=20260930b"></script>
-<script src="subscriptions.js?v=20260915"></script>
+<script src="subscriptions.js?v=20260930"></script>
 <script src="post.js?v=20260930b"></script>
 <script src="profile.js?v=20260930"></script>
 <script>

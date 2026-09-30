@@ -1,8 +1,10 @@
+// изменено 2026-09-30 22:10
 // ============================================================
 // Будни_BY client — подписки («город + ключевое слово» → уведомление в бот)
 // и краудсорсинг источников (предложить канал/группу для парсинга).
 // Живут во вкладке «Анкета» под формой анкеты.
 // Глобалы из app.js: apiPost (client.html), haptic, escapeHtml, alertAsync.
+// Глобалы из deck.js: BY_CITIES, BY_POSITIONS, bindSuggest (подсказки при вводе).
 // Экспортирует: loadSubscriptions, initSubscriptions.
 // ============================================================
 
@@ -36,6 +38,12 @@ async function loadSubscriptions() {
 }
 
 function initSubscriptions() {
+  // подсказки при вводе — те же справочники и компонент, что в ленте и форме размещения (deck.js):
+  // города — по началу названия, профессии — по вхождению («продав» → Продавец, Продавец-консультант…)
+  bindSuggest(document.getElementById('subCity'), document.getElementById('subCitySuggest'), BY_CITIES, 'prefix');
+  bindSuggest(document.getElementById('subKeyword'), document.getElementById('subKeywordSuggest'), BY_POSITIONS, 'contains');
+  bindSuggest(document.getElementById('srcCity'), document.getElementById('srcCitySuggest'), BY_CITIES, 'prefix');
+
   document.getElementById('subAddBtn').addEventListener('click', async function () {
     const btn = this;
     const city = document.getElementById('subCity').value.trim();
