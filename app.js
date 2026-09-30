@@ -1,4 +1,4 @@
-// изменено 2026-09-30 15:10
+// изменено 2026-09-30 21:40
 // ============================================================
 // Будни_BY — общий рантайм для client.html и admin.html.
 // Грузится ПОСЛЕ https://telegram.org/js/telegram-web-app.js и инлайн-скрипта
@@ -8,10 +8,23 @@
 // объявления ниже становятся глобальными и доступны каждому модулю.
 // Экспортирует: tg, telegramUser, APPS_SCRIPT_URL, SECTORS, SECTOR_LIST,
 // haptic, applyTelegramTheme, initTelegram, alertAsync, confirmAsync,
-// escapeHtml, apiCall, bindPhoneMask, formatPhoneTail, fmtVacDate.
+// escapeHtml, apiCall, bindPhoneMask, formatPhoneTail, fmtVacDate, START_PARAM, BOT_LINK.
 // ============================================================
 
 var tg = window.Telegram ? window.Telegram.WebApp : null;
+
+// ---------- метка из ссылки на мини-апп: t.me/Budni_BY_Bot?startapp=<метка> ----------
+// src_* — источник трафика (реклама, страницы сайта: src_seo_minsk_gruzchik) — уходит в visit и
+// оседает в contacts.first_source; vac_<id> — «поделились вакансией»: получатель видит её первой.
+var START_PARAM = (function () {
+  try {
+    var p = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe &&
+      window.Telegram.WebApp.initDataUnsafe.start_param) || '';
+    if (!p) p = new URLSearchParams(location.search).get('tgWebAppStartParam') || '';
+    return String(p).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+  } catch (e) { return ''; }
+})();
+var BOT_LINK = 'https://t.me/Budni_BY_Bot';
 
 // ---------- личные настройки посетителя (тема + вибрация), localStorage ----------
 // Тема: '' = как в Telegram/системе, 'light'/'dark' = ручной оверрайд.
@@ -189,8 +202,10 @@ function fmtBirth(iso) {
 // строке не зависит (пробовали text=-only с футером внизу — ссылка
 // всё равно всплывала наверх, только вдобавок дублировалась). Свой футер
 // в text= не добавляем — иначе будет два упоминания ссылки на одно превью.
-function shareText(text) {
-  const url = 'https://t.me/share/url?url=' + encodeURIComponent('https://t.me/Budni_BY_Bot') +
+// startParam (необязательно) — метка в ссылке на бота: vac_<id> открывает у получателя именно эту вакансию.
+function shareText(text, startParam) {
+  const link = BOT_LINK + (startParam ? '?startapp=' + encodeURIComponent(startParam) : '');
+  const url = 'https://t.me/share/url?url=' + encodeURIComponent(link) +
     '&text=' + encodeURIComponent(String(text || '').slice(0, 3500));
   if (tg && tg.openTelegramLink) { try { tg.openTelegramLink(url); return; } catch (e) {} }
   window.open(url, '_blank');

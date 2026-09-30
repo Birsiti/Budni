@@ -1,4 +1,4 @@
-// изменено 2026-09-30 15:50
+// изменено 2026-09-30 21:40
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -226,6 +226,8 @@ function initFilterUI() {
 // ================= СВАЙП-ЛЕНТА =================
 var DECK = [];
 var DECK_INDEX = 0;
+// id вакансии из ссылки startapp=vac_<id> (см. START_PARAM в app.js); используется один раз
+var SHARED_VAC_ID = START_PARAM.indexOf('vac_') === 0 ? START_PARAM.slice(4) : '';
 
 // демо-режим: пока не подписан на канал — сервер режет выдачу get_deck
 // по общему числу свайпов за всю историю (см. api/vacancies.py::get_deck).
@@ -254,6 +256,18 @@ async function loadDeck() {
     return;
   }
   DECK = res.deck || [];
+  // пришли по ссылке «поделились вакансией» (startapp=vac_<id>) — показываем её первой
+  if (SHARED_VAC_ID) {
+    const sid = SHARED_VAC_ID;
+    SHARED_VAC_ID = '';
+    try {
+      const r = await apiPost({ action: 'get_vacancy', id: sid });
+      if (r && r.ok && r.vacancy) {
+        DECK = DECK.filter(function (x) { return x.id !== r.vacancy.id; });
+        DECK.unshift(r.vacancy);
+      }
+    } catch (e) {}
+  }
   DECK_INDEX = 0;
   DECK_SUBSCRIBED = res.subscribed !== false;
   renderCard();
@@ -345,7 +359,7 @@ document.addEventListener('click', function (e) {
   if (!e.target.closest('.card-share-btn')) return;
   haptic('light');
   const v = DECK[DECK_INDEX];
-  if (v) shareText(v.clean_text || v.position || '');
+  if (v) shareText(v.clean_text || v.position || '', 'vac_' + v.id);
 });
 
 // конечный экран ленты — две ветки: «под фильтр пусто» (сбросить фильтр +

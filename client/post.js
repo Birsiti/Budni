@@ -1,4 +1,4 @@
-// изменено 2026-09-30 16:00
+// изменено 2026-09-30 21:40
 // ============================================================
 // Будни_BY client — вкладка «Разместить»: подача вакансии работодателем,
 // список «Мои вакансии» (снять с публикации / опубликовать снова),
@@ -225,7 +225,7 @@ async function changeMyVacancy(btn, action, id) {
 async function prefillFromContact() {
   if (!telegramUser || !telegramUser.id) return;
   try {
-    const res = await apiPost({ action: 'visit', telegramId: telegramUser.id, username: telegramUser.username || '' });
+    const res = await apiPost({ action: 'visit', telegramId: telegramUser.id, username: telegramUser.username || '', startParam: START_PARAM });
     if (!res || !res.ok) return;
     const nameEl = document.getElementById('fName');
     let filled = false;

@@ -1,4 +1,4 @@
-// изменено 2026-09-30 15:55
+// изменено 2026-09-30 21:40
 // ============================================================
 // Будни_BY client — «Избранное» (свайп вправо). Открывается ❤️ в шапке.
 // Тап по карточке — раскрывает полный текст вакансии + «Поделиться».
@@ -67,7 +67,7 @@ async function loadFavorites() {
     btn.addEventListener('click', function () {
       haptic('light');
       const v = FAVS[parseInt(btn.getAttribute('data-share'), 10)];
-      if (v) shareText(v.clean_text || v.position || '');
+      if (v) shareText(v.clean_text || v.position || '', 'vac_' + v.id);
     });
   });
 }

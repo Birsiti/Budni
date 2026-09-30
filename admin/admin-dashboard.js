@@ -1,4 +1,4 @@
-// изменено 2026-09-22 12:10
+// изменено 2026-09-30 21:30
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -163,6 +163,7 @@ async function loadDashboard() {
 
   renderBody();
   loadSwipeInto();     // фоном
+  loadTrafficInto();   // фоном
   loadSourcesInto();   // фоном
 }
 
@@ -223,6 +224,7 @@ function renderBody() {
     '<div class="section-title">По сферам <span class="st-note">в очереди / опубликовано (всего)</span></div>' +
     collapsibleCard('sectors', sectorRows(s), sectorTotal(s)) +
     '<div id="swipeBox"><div class="section-title">Свайпы</div><div class="card"><div class="empty">Загрузка…</div></div></div>' +
+    '<div id="trafficBox"></div>' +
     '<div class="section-title">По каналам</div>' +
     collapsibleCard('channels', breakdownRows(s.byChannel, 'brow-channel')) +
     '<div class="section-title">По городам</div>' +
@@ -533,7 +535,7 @@ async function setRate(action, value, stateKey, resKey) {
   document.querySelectorAll('.rate-opt').forEach(function (b) { b.disabled = true; });
   const p = {}; p.action = action; p.n = value;
   const res = await apiPost(p);
-  if (res.ok) { D[stateKey] = res[resKey]; haptic('success'); renderStatusLine(); renderBody(); loadSwipeInto(); }
+  if (res.ok) { D[stateKey] = res[resKey]; haptic('success'); renderStatusLine(); renderBody(); loadSwipeInto(); loadTrafficInto(); }
   else { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); document.querySelectorAll('.rate-opt').forEach(function (b) { b.disabled = false; }); }
 }
 
@@ -582,6 +584,30 @@ async function loadSwipeInto() {
     '</div>' +
     '<div class="section-title">Свайпы по сферам</div>' + collapsibleCard('swsec', secRows) +
     '<div class="section-title">Топ вакансий по лайкам</div>' + collapsibleCard('swtop', topRows);
+}
+
+// ---------- откуда приходят люди (новые за 30 дней по метке ?startapp=…) ----------
+function trafficLabel(src) {
+  if (src === 'direct') return 'прямой заход / до включения учёта';
+  if (src === 'vac') return 'поделились вакансией';
+  if (src.indexOf('src_seo_') === 0) return 'сайт · ' + src.slice(8).replace(/_/g, ' / ');
+  return src;
+}
+
+async function loadTrafficInto() {
+  const box = document.getElementById('trafficBox');
+  if (!box) return;
+  const res = await apiPost({ action: 'traffic_sources', days: 30 }).catch(function () { return { ok: false }; });
+  if (!res.ok || !res.rows) { box.innerHTML = ''; return; }   // нет миграции db/017 — блок просто не показываем
+  const rows = res.rows;
+  const max = rows.length ? rows[0].users : 1;
+  const html = rows.map(function (r) {
+    return '<div class="brow"><div class="brow-top"><span>' + escapeHtml(trafficLabel(r.source)) + '</span>' +
+      '<span class="brow-num mono">' + r.users + (r.registered ? ' <span class="dim">· ' + r.registered + ' с анкетой/заявкой</span>' : '') + '</span></div>' +
+      '<div class="bar"><i style="width:' + Math.round(r.users / max * 100) + '%"></i></div></div>';
+  });
+  box.innerHTML = '<div class="section-title">Откуда приходят <span class="st-note">новые за 30 дн.: ' + (res.total || 0) + '</span></div>' +
+    collapsibleCard('traffic', html);
 }
 
 // ---------- счётчик источников на рассмотрении ----------
