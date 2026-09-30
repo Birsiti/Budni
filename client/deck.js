@@ -1,4 +1,4 @@
-// изменено 2026-09-30 15:45
+// изменено 2026-09-30 15:35
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -544,10 +544,10 @@ function finishSwipe(decision, card, dxAtRelease) {
   const v = DECK[DECK_INDEX];
   UNDO_STACK.push({ id: v.id, decision: decision });
   if (UNDO_STACK.length > 10) UNDO_STACK.shift();
-  apiPost({
+  queueApi({
     action: 'record_swipe', telegramId: telegramUser.id, username: telegramUser.username || '',
     vacancyId: v.id, sector: v.sector, decision: decision,
-  }).catch(function () {});
+  });
 
   if (decision === 'like') {
     flashFavHeart();
@@ -565,22 +565,32 @@ function finishSwipe(decision, card, dxAtRelease) {
 // ---------- «Вернуть» ----------
 var UNDO_STACK = [];   // последние свайпы текущей ленты: { id, decision }
 
-function updateUndoBtn() {
-  const b = document.getElementById('undoBtn');
-  if (b) b.disabled = UNDO_STACK.length === 0 || SWIPE_LOCKED;
+// запросы свайпов и отмен идут строго по очереди: иначе «вернуть и тут же свайпнуть снова» могло
+// прийти на сервер в обратном порядке, и отмена стёрла бы новый свайп
+var API_QUEUE = Promise.resolve();
+function queueApi(payload) {
+  API_QUEUE = API_QUEUE.then(function () { return apiPost(payload); }).catch(function () {});
+  return API_QUEUE;
 }
 
-async function undoLastSwipe() {
-  if (SWIPE_LOCKED || !UNDO_STACK.length || DECK_INDEX <= 0) return;
-  SWIPE_LOCKED = true;
+function updateUndoBtn() {
+  const b = document.getElementById('undoBtn');
+  if (b) b.disabled = UNDO_STACK.length === 0;
+}
+
+// Мгновенно: карточка возвращается сразу, сервер уведомляется в фоне (раньше кнопка ждала ответа
+// сервера и на первое нажатие визуально ничего не происходило)
+function undoLastSwipe() {
+  if (!UNDO_STACK.length) return;
+  if (SWIPE_LOCKED) { setTimeout(undoLastSwipe, 260); return; }   // карточка ещё улетает — вернём сразу после
+  if (DECK_INDEX <= 0) return;
   const last = UNDO_STACK.pop();
   haptic('light');
-  await apiPost({ action: 'undo_swipe', vacancyId: last.id }).catch(function () {});
+  queueApi({ action: 'undo_swipe', vacancyId: last.id });
   if (last.decision === 'like') {
     setFavCount(Math.max(0, (parseInt(document.getElementById('favCount').textContent, 10) || 0) - 1));
   }
   DECK_INDEX--;
-  SWIPE_LOCKED = false;
   renderCard();
 }
 
