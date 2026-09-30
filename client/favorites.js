@@ -1,4 +1,4 @@
-// изменено 2026-09-30 21:40
+// изменено 2026-09-30 15:45
 // ============================================================
 // Будни_BY client — «Избранное» (свайп вправо). Открывается ❤️ в шапке.
 // Тап по карточке — раскрывает полный текст вакансии + «Поделиться».
@@ -47,6 +47,8 @@ async function loadFavorites() {
       // номера в этой Telegram WebView — обработчик копирует номер в буфер)
       (tel ? '<a class="fav-contact fav-tel tel-link" href="tel:' + escapeHtml(tel) + '" data-vid="' + escapeHtml(v.id) + '" data-tel="' + escapeHtml(v.phone) + '">📞 ' + escapeHtml(v.phone) + ' — позвонить</a>' : '') +
       (otherContact ? '<div class="fav-contact">' + escapeHtml(otherContact) + '</div>' : '') +
+      // «Неактуально» — здесь, а не на карточке ленты: о том, что вакансия мёртвая, узнают, позвонив
+      '<button type="button" class="fav-report" data-report="' + i + '">Не дозвонились или вакансия неактуальна</button>' +
       '<div class="fav-full" id="favFull-' + i + '">' +
         '<div class="fav-fulltext">' + escapeHtml(v.clean_text || v.position || '') + '</div>' +
         '<button class="fav-share" data-share="' + i + '">↗ Поделиться</button>' +
@@ -63,6 +65,9 @@ async function loadFavorites() {
   el.querySelectorAll('[data-remove]').forEach(function (btn) {
     btn.addEventListener('click', function (e) { e.stopPropagation(); removeFav(parseInt(btn.getAttribute('data-remove'), 10)); });
   });
+  el.querySelectorAll('[data-report]').forEach(function (btn) {
+    btn.addEventListener('click', function () { reportFav(parseInt(btn.getAttribute('data-report'), 10)); });
+  });
   el.querySelectorAll('[data-share]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       haptic('light');
@@ -70,6 +75,19 @@ async function loadFavorites() {
       if (v) shareText(v.clean_text || v.position || '', 'vac_' + v.id);
     });
   });
+}
+
+// жалоба «неактуально»: набралось 3 жалобы от разных людей — вакансия уйдёт из ленты у всех
+// (report_vacancy на бэкенде); у себя убираем из избранного сразу
+async function reportFav(i) {
+  const v = FAVS[i];
+  if (!v) return;
+  const ok = await confirmAsync('Пометить «' + (v.position || 'вакансию') + '» как неактуальную и убрать из избранного? Если так решат несколько человек, мы уберём её из ленты.');
+  if (!ok) return;
+  haptic('success');
+  await apiPost({ action: 'report_vacancy', vacancyId: v.id }).catch(function () {});
+  await apiPost({ action: 'remove_favorite', vacancyId: v.id, sector: v.sector }).catch(function () {});
+  loadFavorites();
 }
 
 async function removeFav(i) {

@@ -1,4 +1,4 @@
-// изменено 2026-09-30 23:58
+// изменено 2026-09-30 15:45
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -473,7 +473,6 @@ function renderCard() {
       '<div class="swipe-tag skip" id="tagSkip">ПРОПУСТИТЬ</div>' +
       meta +
       '<div class="card-body">' + linkifyContacts(escapeHtml(v.clean_text || v.position || ''), v) + '</div>' +
-      '<button type="button" class="card-report-btn" aria-label="Пожаловаться: вакансия неактуальна">Неактуально</button>' +
       '<button type="button" class="card-share-btn" aria-label="Поделиться">↗</button>' +
     '</div>';
   bindCardGestures(document.getElementById('activeCard'));
@@ -563,7 +562,7 @@ function finishSwipe(decision, card, dxAtRelease) {
   setTimeout(function () { DECK_INDEX++; SWIPE_LOCKED = false; renderCard(); }, 240);
 }
 
-// ---------- «Вернуть» и «Неактуально» ----------
+// ---------- «Вернуть» ----------
 var UNDO_STACK = [];   // последние свайпы текущей ленты: { id, decision }
 
 function updateUndoBtn() {
@@ -585,22 +584,10 @@ async function undoLastSwipe() {
   renderCard();
 }
 
-async function reportCurrent() {
-  if (SWIPE_LOCKED) return;
-  const card = document.getElementById('activeCard');
-  const v = DECK[DECK_INDEX];
-  if (!card || !v) return;
-  const ok = await confirmAsync('Пометить вакансию как неактуальную? Если так решат несколько человек, мы уберём её из ленты.');
-  if (!ok) return;
-  apiPost({ action: 'report_vacancy', vacancyId: v.id }).catch(function () {});
-  finishSwipe('skip', card, -1);   // для вас она пропущена
-}
 
 function bindDeckButtons() {
   document.getElementById('undoBtn').onclick = undoLastSwipe;
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.card-report-btn')) { haptic('light'); reportCurrent(); }
-  });
+
   document.getElementById('skipBtn').onclick = function () {
     if (SWIPE_LOCKED) return;
     const card = document.getElementById('activeCard');
