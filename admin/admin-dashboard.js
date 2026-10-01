@@ -1,4 +1,4 @@
-// изменено 2026-09-30 23:59
+// изменено 2026-10-01 10:40
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -151,6 +151,7 @@ async function loadDashboard() {
 
   const s = D.stats;
   setNum('stVac', totalOf(s.bySector));
+  loadLiveInto();      // фоном: «из них живых» — как на заставке мини-аппа
   setNum('stNew', s.newToday || 0);
   setNum('navQueue', s.queueLength || 0);
 
@@ -166,6 +167,18 @@ async function loadDashboard() {
   loadTrafficInto();   // фоном
   loadFunnelInto();    // фоном
   loadSourcesInto();   // фоном
+}
+
+// «Всего в базе» (13 481) ≠ число на заставке мини-аппа (9 400): там только уникальные объявления
+// с контактом, не подозрительные и не отклонённые, за 2 месяца (api/admin.py::_recent_count).
+// Денис спросил «где 4000 потерялось» (2026-10-01) — показываем оба числа рядом. Тот же
+// public_stats, что у заставки (кэш на бэкенде 10 мин); не ответил — строки просто нет.
+async function loadLiveInto() {
+  try {
+    const r = await apiGet('public_stats');
+    const n = r && r.ok ? (typeof r.recent === 'number' && r.recent > 0 ? r.recent : r.live) : null;
+    if (typeof n === 'number' && n > 0) setNum('stLive', 'из них живых: ' + n.toLocaleString('ru-RU'));
+  } catch (e) { /* без строки — не страшно */ }
 }
 
 function totalOf(obj) {

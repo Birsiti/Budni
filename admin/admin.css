@@ -1,4 +1,4 @@
-/* изменено 2026-09-30 23:30 */
+/* изменено 2026-10-01 10:40 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -260,6 +260,9 @@ details.more[open] > summary{ color:var(--ink-soft); }
 }
 .stat-value{ font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:600; }
 .stat-label{ color:var(--ink-soft); font-size:14px; margin-top:2px; line-height:1.3; hyphens:none; overflow-wrap:normal; }
+/* «из них живых: 9 400» под «всего в базе» — то же число, что на заставке мини-аппа (2026-10-01) */
+.stat-sub{ color:var(--ink); font-size:14px; font-weight:600; margin-top:4px; line-height:1.3; }
+.stat-sub:empty{ display:none; }
 
 .sector-row{
   display:flex; justify-content:space-between; align-items:center; gap:10px;
