@@ -1,4 +1,4 @@
-/* изменено 2026-10-01 20:30 */
+/* изменено 2026-10-01 22:50 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -191,6 +191,7 @@ details.more[open] > summary{ color:var(--ink-soft); }
   min-height:40px; display:flex; align-items:center;
 }
 .subbar h1{ flex:1; font-size:19px; font-weight:700; margin:0; }
+.subbar .count:empty{ display:none; }   /* нет числа — не показывать пустой овал */
 .subbar .count{
   font-family:'JetBrains Mono',monospace; font-size:14px;
   background:var(--surface-3); border-radius:20px; padding:1px 7px; color:var(--ink-soft);
@@ -394,7 +395,7 @@ body{ font-size:17px; }
 .bc-ibtn[disabled]{ opacity:.5; }
 .bc-lbl{ font-size:14px; color:var(--ink-soft); margin:2px 0 6px; }
 .bc-lbl ~ .seg{ margin-bottom:14px; }
-.bc-hours{ display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+.bc-hours{ display:flex; gap:8px; align-items:center; }
 .bc-hours label{ display:flex; align-items:center; gap:6px; font-size:15px; color:var(--ink-soft); }
 .bc-hours input{
   width:64px; min-height:44px; border-radius:var(--radius-sm); border:1px solid var(--line);
@@ -402,8 +403,6 @@ body{ font-size:17px; }
   font-family:'JetBrains Mono',monospace;
 }
 .bc-hours .qbtn{ min-height:44px; }
-.bc-check{ display:flex; gap:10px; align-items:flex-start; font-size:15px; color:var(--ink-soft); line-height:1.4; }
-.bc-check input{ width:22px; height:22px; flex:none; margin-top:1px; accent-color:var(--accent); }
 .bc-sectors{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
 .bc-off{ opacity:.45; }
 .bc-preview{

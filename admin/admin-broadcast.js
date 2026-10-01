@@ -1,4 +1,4 @@
-// изменено 2026-10-01 22:10
+// изменено 2026-10-01 22:50
 // ============================================================
 // Будни_BY admin — страница «Рассылка» (admin-broadcast.html): посты о вакансиях в чужие группы
 // от аккаунта-парсера. Сфера — по кругу, текст собирается из живых чисел базы (api/broadcast.py),
@@ -124,8 +124,6 @@ function renderBroadcast() {
         '<label>до <input type="number" id="bcTo" min="1" max="24" inputmode="numeric" value="' + c.hour_to + '"></label>' +
         '<button class="qbtn ok" id="bcHoursSave">Сохранить</button>' +
       '</div>' +
-      '<label class="bc-check"><input type="checkbox" id="bcTrack"' + (c.track ? ' checked' : '') + '>' +
-        '<span>Ссылка с меткой — видно на пульте, сколько людей пришло из групп. Выключено — простое @Budni_BY_Bot (так реже удаляют антиспам-боты).</span></label>' +
     '</div>';
 
   const sectors = (b.sectors || []).map(function (s) {
@@ -243,9 +241,6 @@ function bindBroadcast() {
   document.getElementById('bcHoursSave').addEventListener('click', function () {
     bcSave({ hour_from: Number(document.getElementById('bcFrom').value),
              hour_to: Number(document.getElementById('bcTo').value) }, this);
-  });
-  document.getElementById('bcTrack').addEventListener('change', function () {
-    bcSave({ track: this.checked }, null);
   });
 
   document.getElementById('bcPreview').addEventListener('click', async function () {
