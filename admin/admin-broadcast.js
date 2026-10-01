@@ -1,4 +1,4 @@
-// изменено 2026-10-01 20:30
+// изменено 2026-10-01 21:30
 // ============================================================
 // Будни_BY admin — страница «Рассылка» (admin-broadcast.html): посты о вакансиях в чужие группы
 // от аккаунта-парсера. Сфера — по кругу, текст собирается из живых чисел базы (api/broadcast.py),
@@ -129,12 +129,12 @@ function renderBroadcast() {
     '</div>';
 
   const sectors = (b.sectors || []).map(function (s) {
-    return '<span class="badge' + (s.n < 5 ? ' bc-off' : '') + '">' + s.emoji + ' ' + escapeHtml(s.sector) + ' · ' + s.n + '</span>';
+    return '<span class="badge">' + s.emoji + ' ' + escapeHtml(s.sector) + ' · ' + s.n + '</span>';
   }).join('');
   const preview =
     '<div class="section-title">Текст</div>' +
     '<div class="card">' +
-      '<p class="bc-note" style="margin-top:0;">Каждый раз — следующая сфера по кругу: заголовок, частые должности и города из свежих вакансий за 2 недели. Сферы, где меньше 5 вакансий, пропускаются.</p>' +
+      '<p class="bc-note" style="margin-top:0;">Обычный пост рабочего чата, не реклама: 3–4 свежие вакансии одной сферы (должность, город, зарплата) за неделю, бот — строкой внизу. Сферы идут по кругу; где не набирается 3 вакансий с зарплатой — пропускается.</p>' +
       '<div class="bc-sectors">' + sectors + '</div>' +
       '<button class="btn" id="bcPreview" style="width:100%; background:var(--surface-2); color:var(--ink);">👀 Пример поста мне в личку</button>' +
       '<div id="bcPreviewText" class="bc-preview" hidden></div>' +
