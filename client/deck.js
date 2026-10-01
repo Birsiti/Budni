@@ -1,4 +1,4 @@
-// изменено 2026-09-30 15:35
+// изменено 2026-10-01 11:20
 // ============================================================
 // Будни_BY client — свайп-лента вакансий.
 // Фильтр (формат рядом/вахта, город, направление, без опыта) — в панели,
@@ -460,10 +460,13 @@ function renderCard() {
     v.source === 'employer' ? '<span class="badge badge-employer">✓ Прямая</span>' : '',
     v.job_type === 'вахта' ? '<span class="badge">🧳 ' + escapeHtml(v.country || 'Вахта') + '</span>' : '',
   ].filter(Boolean).join('');
-  const meta = (dateTxt || badges)
+  // номер объявления — в правом углу, напротив даты (Денис, 2026-10-01): по нему легко найти
+  // вакансию в пульте/базе, когда человек пишет «с объявлением №… что-то не так»
+  const idTag = v.id != null ? '<span class="card-id" aria-label="Номер объявления">№' + escapeHtml(v.id) + '</span>' : '';
+  const meta = (dateTxt || badges || idTag)
     ? '<div class="card-meta">' +
         (dateTxt ? '<span class="card-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>' + escapeHtml(dateTxt) + '</span>' : '<span></span>') +
-        (badges ? '<span class="card-badges">' + badges + '</span>' : '') +
+        ((badges || idTag) ? '<span class="card-badges">' + badges + idTag + '</span>' : '') +
       '</div>'
     : '';
 

@@ -1,6 +1,6 @@
 /* ============================================================
    Будни_BY — стили только client.html (мини-апп соискателя/работодателя).
-   изменено 2026-09-30 23:59
+   изменено 2026-10-01 11:20
    Общие токены и компоненты — в theme.css (грузится раньше).
    ============================================================ */
 
@@ -117,6 +117,8 @@ body{ overscroll-behavior-y:contain; }
 }
 .card-date svg{ width:15px; height:15px; flex:none; }
 .card-badges{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.card-id{ font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+  display:inline-flex; align-items:center; }
 .card-body{
   flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
   overscroll-behavior-y:contain;
