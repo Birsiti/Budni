@@ -1,4 +1,4 @@
-// изменено 2026-10-01 10:40
+// изменено 2026-10-01 20:30
 // ============================================================
 // Будни_BY admin — главный экран (admin.html): пульт владельца.
 // Парсинг + публикация (плитки в строку) + общая строка деталей,
@@ -167,6 +167,7 @@ async function loadDashboard() {
   loadTrafficInto();   // фоном
   loadFunnelInto();    // фоном
   loadSourcesInto();   // фоном
+  loadBroadcastInto(); // фоном
 }
 
 // «Всего в базе» (13 481) ≠ число на заставке мини-аппа (9 400): там только уникальные объявления
@@ -644,6 +645,17 @@ async function loadFunnelInto() {
   });
   box.innerHTML = '<div class="section-title">Воронка <span class="st-note">за 30 дн.</span></div>' +
     '<div class="card">' + rows.join('') + '</div>';
+}
+
+// ---------- плитка «Рассылка»: число групп, бейдж — сколько ушло сегодня (✕ — если выключена) ----------
+async function loadBroadcastInto() {
+  const res = await apiPost({ action: 'broadcast_get' });
+  if (!res.ok) return;
+  setNum('navBc', (res.groups || []).length);
+  const badge = document.getElementById('navBcBadge');
+  if (!badge) return;
+  if (res.cfg && res.cfg.active) { badge.textContent = '↗' + (res.sentToday || 0); badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
 }
 
 // ---------- счётчик источников на рассмотрении ----------
