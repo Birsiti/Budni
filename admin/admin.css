@@ -1,4 +1,4 @@
-/* изменено 2026-10-01 22:50 */
+/* изменено 2026-10-05 15:40 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -414,3 +414,18 @@ body{ font-size:17px; }
 .bc-log-ic{ flex:none; width:18px; font-weight:700; }
 .bc-log-body{ min-width:0; font-size:15px; word-break:break-word; }
 .bc-log-sub{ color:var(--ink-soft); font-size:14px; }
+
+/* ---------- источники: молчащие каналы, аккаунты, «Публикуем» (2026-10-05) ---------- */
+.badge-silent{ background:var(--danger-soft); color:var(--danger); font-weight:600; }
+.badge-acc{ font-family:'JetBrains Mono',monospace; }
+.badge-ok{ background:var(--ok-soft); color:var(--ok); }
+.src-row.is-silent{ box-shadow:inset 3px 0 0 var(--danger); padding-left:10px; }
+.pub-row{ padding:10px 0; border-bottom:1px solid var(--line); }
+.pub-row:last-child{ border-bottom:none; }
+.pub-row.is-off .pub-from, .pub-row.is-off .pub-what{ opacity:.6; }
+.pub-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.pub-from{ font-weight:600; font-size:16px; word-break:break-word; }
+.pub-what{ font-size:15px; color:var(--ink-soft, var(--ink)); margin:2px 0 4px; }
+.pub-to{ font-size:15px; padding:1px 0; word-break:break-word; }
+.pub-err{ color:var(--danger); font-size:14px; }
+.pub-note{ font-size:14px; color:var(--ink-faint); margin-top:3px; }

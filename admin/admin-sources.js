@@ -1,4 +1,4 @@
-// изменено 2026-09-30 23:30
+// изменено 2026-10-05 15:40
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html): предложенные
 // каналы, одобрить/отклонить/добавить/удалить. Рендерит в #view.
@@ -11,7 +11,15 @@ async function loadSources() {
   const res = await apiPost({ action: 'list_sources' });
   if (!res.ok) { el.innerHTML = '<div class="empty">Не получилось загрузить</div>'; return; }
   STATE.sources = res.sources || [];
+  STATE.publishing = res.publishing || [];
   renderSources();
+}
+
+function fmtShort(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return p(d.getDate()) + '.' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
 function platformBadge(platform) {
@@ -78,15 +86,45 @@ function renderSources() {
     const warn = s.platform === 'telegram' && !s.parsed_username
       ? '<span class="badge badge-viber">ссылка не распознана</span>' : '';
     const uname = s.parsed_username ? '<span class="src-uname">→ @' + escapeHtml(s.parsed_username) + '</span>' : '';
+    // «N (+M сегодня)»: N — в ленте мини-аппа, M — сообщений с контактом, взятых сегодня
     const count = showCount
-      ? '<span class="badge badge-count">' + (s.miniappCount || 0) + '</span>' : '';
-    return '<div class="src-row">' +
-      '<div class="src-info"><div class="src-link">' + escapeHtml(s.link) + '</div>' +
+      ? '<span class="badge badge-count' + (s.silent ? ' badge-silent' : '') + '">' + (s.miniappCount || 0) +
+        ' (+' + (s.today || 0) + ' сегодня)</span>' : '';
+    const silent = showCount && s.silent
+      ? '<span class="badge badge-silent">⚠ 2 дня без объявлений' +
+        (s.last_msg_at ? ' · последнее ' + escapeHtml(fmtShort(s.last_msg_at)) : '') + '</span>' : '';
+    const accs = showCount && s.platform === 'telegram'
+      ? (s.accounts && s.accounts.length
+          ? s.accounts.map(function (a) {
+              return '<span class="badge badge-acc' + (a.alive ? '' : ' badge-silent') + '">📱 ' + escapeHtml(a.label) + '</span>';
+            }).join('')
+          : '<span class="badge">📱 не парсится аккаунтом</span>')
+      : '';
+    return '<div class="src-row' + (showCount && s.silent ? ' is-silent' : '') + '">' +
+      '<div class="src-info"><div class="src-link">' + escapeHtml(s.title || s.link) + '</div>' +
       '<div class="src-meta">' + platformBadge(s.platform) +
-        (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + warn + count + uname + '</div></div>' +
+        (s.city ? '<span class="badge">' + escapeHtml(s.city) + '</span>' : '') + warn + count + silent + uname + '</div>' +
+      (accs ? '<div class="src-meta">' + accs + '</div>' : '') + '</div>' +
       '<div class="src-actions">' + actions + '</div>' +
     '</div>';
   }
+
+  function pubStatus(g) {
+    const map = { ok: '✓', no_access: '⛔', slowmode: '⏳', error: '⚠', 'new': '·' };
+    return (map[g.status] || '·') + ' ' + escapeHtml(g.title || g.chat) +
+      (g.error && g.status !== 'ok' ? ' <span class="pub-err">(' + escapeHtml(g.error) + ')</span>' : '');
+  }
+
+  const pubHtml = (STATE.publishing || []).map(function (p) {
+    const to = (p.to || []).map(function (g) { return '<div class="pub-to">' + pubStatus(g) + '</div>'; }).join('')
+      || '<div class="pub-to">—</div>';
+    return '<div class="pub-row' + (p.active ? '' : ' is-off') + '">' +
+      '<div class="pub-head"><span class="pub-from">' + escapeHtml(p.from) + '</span>' +
+        '<span class="badge ' + (p.active ? 'badge-ok' : '') + '">' + (p.active ? 'работает' : 'выключено') + '</span></div>' +
+      '<div class="pub-what">' + escapeHtml(p.what) + '</div>' + to +
+      (p.note ? '<div class="pub-note">' + escapeHtml(p.note) + '</div>' : '') +
+    '</div>';
+  }).join('');
 
   const pendingHtml = pending.length === 0
     ? '<div class="empty">Нет предложений от пользователей</div>'
@@ -110,6 +148,8 @@ function renderSources() {
       }).join('') + '</div>';
 
   el.innerHTML =
+    '<div class="section-title" style="margin-top:0;">Публикуем: с какого номера и куда</div>' +
+    '<div class="card">' + (pubHtml || '<div class="empty">Нет данных</div>') + '</div>' +
     '<div class="card">' + addForm + '</div>' +
     '<div class="section-title">Парсятся сейчас (' + tgApproved.length + ')</div>' +
     '<div class="card">' + parsedHtml + '</div>' +
