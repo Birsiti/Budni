@@ -1,4 +1,4 @@
-// изменено 2026-10-05 22:20
+// изменено 2026-10-05 22:30
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -209,6 +209,7 @@ function srcPubHtml() {
       const st = g.status || 'new';
       const when = g.last_at ? ' · ' + escapeHtml(fmtShort(g.last_at)) : '';
       const no = g.text_no ? ' · №' + g.text_no : '';
+      if (!g.status) return '<span class="pill">' + escapeHtml(pubChatName(g)) + '</span>';   // бот: статуса отправки нет
       return '<span class="pill pill-' + escapeHtml(st) + '">' + (GL[st] || '·') + ' ' + escapeHtml(pubChatName(g)) +
         (st === 'ok' ? when + no : (TXT[st] ? ' <em>' + TXT[st] + '</em>' : '')) + '</span>';
     }).join('');
