@@ -1,4 +1,4 @@
-// изменено 2026-10-05 19:10
+// изменено 2026-10-05 22:20
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -194,6 +194,11 @@ function srcStatsHtml(real) {
   '</div>';
 }
 
+function pubChatName(g) {
+  if (g.title) return g.title;
+  return /^https?:\/\/t\.me\/\+/.test(g.chat || '') ? 'Приватная группа' : (g.chat || '');
+}
+
 function srcPubHtml() {
   const items = STATE.publishing || [];
   if (!items.length) return '';
@@ -202,9 +207,20 @@ function srcPubHtml() {
   const rows = items.map(function (p) {
     const pills = (p.to || []).map(function (g) {
       const st = g.status || 'new';
-      return '<span class="pill pill-' + escapeHtml(st) + '">' + (GL[st] || '·') + ' ' + escapeHtml(g.title || g.chat) +
-        (TXT[st] ? ' <em>' + TXT[st] + '</em>' : '') + '</span>';
+      const when = g.last_at ? ' · ' + escapeHtml(fmtShort(g.last_at)) : '';
+      const no = g.text_no ? ' · №' + g.text_no : '';
+      return '<span class="pill pill-' + escapeHtml(st) + '">' + (GL[st] || '·') + ' ' + escapeHtml(pubChatName(g)) +
+        (st === 'ok' ? when + no : (TXT[st] ? ' <em>' + TXT[st] + '</em>' : '')) + '</span>';
     }).join('');
+    const next = p.active && p.next_at
+      ? '<div class="pub-next">Следующая отправка ~' + escapeHtml(fmtShort(p.next_at)) +
+        (p.next_text ? ' · текст №' + p.next_text : '') + '</div>' : '';
+    const log = (p.log && p.log.length)
+      ? '<div class="pub-log">' + p.log.map(function (e) {
+          return '<div class="pub-log-row' + (e.ok ? '' : ' is-fail') + '"><span>' + escapeHtml(fmtShort(e.at)) + '</span>' +
+            '<span>' + (e.ok ? '✓' : '×') + ' ' + escapeHtml(e.chat || '') +
+            (e.text_no ? ' · №' + e.text_no : '') + (e.ok ? '' : ' — ' + escapeHtml(e.error || 'ошибка')) + '</span></div>';
+        }).join('') + '</div>' : '';
     return '<div class="pub ' + (p.active ? '' : 'is-off') + '">' +
       '<div class="pub-top"><span class="sdot ' + (p.active ? 'ok' : '') + '" aria-hidden="true"></span>' +
         '<span class="pub-from">' + escapeHtml(p.from) + '</span>' +
@@ -212,6 +228,7 @@ function srcPubHtml() {
       '<div class="pub-what">' + escapeHtml(p.what) + '</div>' +
       (pills ? '<div class="pub-to">' + pills + '</div>' : '') +
       (p.note ? '<div class="pub-note">' + escapeHtml(p.note) + '</div>' : '') +
+      next + log +
     '</div>';
   }).join('');
   return '<section class="sblock">' +
