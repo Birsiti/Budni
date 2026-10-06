@@ -1,4 +1,4 @@
-// изменено 2026-10-05 22:30
+// изменено 2026-10-06 13:35
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -208,11 +208,14 @@ function srcPubHtml() {
     const pills = (p.to || []).map(function (g) {
       const st = g.status || 'new';
       const when = g.last_at ? ' · ' + escapeHtml(fmtShort(g.last_at)) : '';
-      const no = g.text_no ? ' · №' + g.text_no : '';
+      const no = (g.text_no ? ' · №' + g.text_no : '') + (g.sent ? ' · ' + g.sent + ' ' + plural(g.sent, 'раз', 'раза', 'раз') : '');
       if (!g.status) return '<span class="pill">' + escapeHtml(pubChatName(g)) + '</span>';   // бот: статуса отправки нет
       return '<span class="pill pill-' + escapeHtml(st) + '">' + (GL[st] || '·') + ' ' + escapeHtml(pubChatName(g)) +
         (st === 'ok' ? when + no : (TXT[st] ? ' <em>' + TXT[st] + '</em>' : '')) + '</span>';
     }).join('');
+    const total = (p.to || []).reduce(function (n, g) { return n + (g.sent || 0); }, 0);
+    const sentLine = p.sent_today != null
+      ? '<div class="pub-sent"><b>' + total + '</b> ' + plural(total, 'отправка', 'отправки', 'отправок') + ' всего · сегодня <b>' + p.sent_today + '</b></div>' : '';
     const next = p.active && p.next_at
       ? '<div class="pub-next">Следующая отправка ~' + escapeHtml(fmtShort(p.next_at)) +
         (p.next_text ? ' · текст №' + p.next_text : '') + '</div>' : '';
@@ -229,7 +232,7 @@ function srcPubHtml() {
       '<div class="pub-what">' + escapeHtml(p.what) + '</div>' +
       (pills ? '<div class="pub-to">' + pills + '</div>' : '') +
       (p.note ? '<div class="pub-note">' + escapeHtml(p.note) + '</div>' : '') +
-      next + log +
+      sentLine + next + log +
     '</div>';
   }).join('');
   return '<section class="sblock">' +

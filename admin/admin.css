@@ -1,4 +1,4 @@
-/* изменено 2026-10-05 22:20 */
+/* изменено 2026-10-06 13:35 */
 /* ============================================================
    Будни_BY — стили страниц админки (admin*.html): хаб + подстраницы.
    Общие токены и компоненты — в theme.css (грузится раньше).
@@ -546,3 +546,6 @@ body{ font-size:17px; }
 .pub-log-row > span:first-child{ flex:none; font-family:'JetBrains Mono',monospace; color:var(--ink-faint); }
 .pub-log-row > span:last-child{ min-width:0; overflow-wrap:break-word; }
 .pub-log-row.is-fail{ color:var(--danger); }
+
+.pub-sent{ font-size:15px; color:var(--ink-soft); margin:8px 0 0 20px; }
+.pub-sent b{ color:var(--ink); font-size:16px; }
