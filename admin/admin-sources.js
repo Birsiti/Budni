@@ -1,4 +1,4 @@
-// изменено 2026-10-07 12:30
+// изменено 2026-10-07 14:45
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -142,6 +142,13 @@ function srcRowHtml(s) {
     : '';
   const open = s.link && /^https?:/i.test(s.link)
     ? '<a class="btn-soft" href="' + escapeHtml(s.link) + '" target="_blank" rel="noopener">Открыть канал</a>' : '';
+  const cur = s.account || 'parser';
+  const other = cur === 'parser2' ? 'parser' : 'parser2';
+  const blocked = (s.blocked_accounts || []).map(function (w) { return srcAccountLabel(w); });
+  const blockedHtml = blocked.length
+    ? '<div class="srow-blocked">🚫 Заблокирован на этом канале: ' + escapeHtml(blocked.join(', ')) + '</div>' : '';
+  const moveBtn = s.platform === 'telegram'
+    ? '<button class="btn-soft" type="button" data-src-move="' + escapeHtml(s.id) + '">Парсить с другого номера</button>' : '';
   return '<div class="srow ' + tone + '" data-src="' + escapeHtml(s.id) + '">' +
     '<button class="srow-main" type="button" aria-expanded="false">' +
       '<span class="sdot" aria-hidden="true"></span>' +
@@ -150,8 +157,8 @@ function srcRowHtml(s) {
       '<span class="srow-num"><b>' + (s.miniappCount || 0) + '</b><i>(' + ((s.today || 0) > 0 ? '+' : '') + (s.today || 0) + ')</i></span>' +
     '</button>' +
     '<div class="srow-more" hidden>' +
-      '<div class="srow-link">' + escapeHtml(s.link || '') + '</div>' +
-      '<div class="srow-actions">' + open +
+      '<div class="srow-link">' + escapeHtml(s.link || '') + '</div>' + blockedHtml +
+      '<div class="srow-actions">' + open + moveBtn +
         '<button class="btn-soft btn-danger" type="button" data-src-remove="' + escapeHtml(s.id) + '">Убрать из парсинга</button></div>' +
     '</div>' +
   '</div>';
@@ -355,6 +362,8 @@ function bindSources(tg) {
     if (more) { SRC_UI.all[more.getAttribute('data-more')] = true; srcSaveUi(); rerenderList(); return; }
     const less = e.target.closest('[data-less]');
     if (less) { SRC_UI.all[less.getAttribute('data-less')] = false; srcSaveUi(); rerenderList(); return; }
+    const mv = e.target.closest('[data-src-move]');
+    if (mv) { await moveSource(mv); return; }
     const rm = e.target.closest('[data-src-remove]');
     if (rm) { await removeSource(rm); return; }
     const main = e.target.closest('.srow-main');
@@ -430,6 +439,24 @@ function bindSources(tg) {
   el.querySelectorAll('#viberBody [data-src-remove]').forEach(function (btn) {
     btn.addEventListener('click', function () { removeSource(btn); });
   });
+}
+
+async function moveSource(btn) {
+  const id = btn.getAttribute('data-src-move');
+  const s = (STATE.sources || []).find(function (x) { return String(x.id) === String(id); });
+  if (!s) return;
+  const cur = s.account || 'parser';
+  const target = cur === 'parser2' ? 'parser' : 'parser2';
+  const warnBlocked = (s.blocked_accounts || []).indexOf(target) >= 0
+    ? '\n\n⚠ ' + srcAccountLabel(target) + ' раньше уже был заблокирован на этом канале.' : '';
+  const ok = await confirmAsync('Перенести «' + srcName(s) + '» с номера ' + srcAccountLabel(cur) + ' на ' + srcAccountLabel(target) +
+    '? ' + srcAccountLabel(cur) + ' запомнится как заблокированный на этом канале.' + warnBlocked);
+  if (!ok) return;
+  btn.disabled = true;
+  const res = await apiPost({ action: 'move_source', id: id, account: target });
+  if (!res.ok) { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); btn.disabled = false; return; }
+  haptic('success');
+  loadSources();
 }
 
 async function removeSource(btn) {
