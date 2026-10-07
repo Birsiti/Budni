@@ -1,4 +1,4 @@
-// изменено 2026-10-06 13:35
+// изменено 2026-10-07 12:30
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -73,6 +73,11 @@ function extractTgUsernameClient(link) {
 // ищет уже существующий (не отклонённый) источник по ссылке или username —
 // та же логика, что и dup-проверка в api.admin.add_source, но локально по
 // уже загруженному STATE.sources, без похода на бэкенд.
+function dupWhere(dup, account) {
+  if (!dup || !dup.account || dup.account === account) return '';
+  return 'Этот канал уже на другом номере (' + srcAccountLabel(dup.account) + '). Сначала уберите его оттуда, чтобы не парсился с двух.';
+}
+
 function findDuplicateSource(link) {
   const s = String(link || '').trim();
   if (!s) return null;
@@ -86,6 +91,13 @@ function findDuplicateSource(link) {
   }) || null;
 }
 
+// подпись аккаунта-парсера: номер из heartbeat (берём у любого источника этого аккаунта), иначе общее имя
+function srcAccountLabel(worker) {
+  const hit = (STATE.sources || []).find(function (x) { return (x.accounts || []).some(function (a) { return a.worker === worker; }); });
+  const acc = hit && hit.accounts.find(function (a) { return a.worker === worker; });
+  return acc ? acc.label : (worker === 'parser2' ? 'Второй номер' : 'Первый номер');
+}
+
 // ---------- данные для сводки и групп ----------
 function srcGroups(approved) {
   // группа = аккаунт, который парсит канал; нет аккаунта (сайты, пока нет heartbeat) — «other»
@@ -93,8 +105,8 @@ function srcGroups(approved) {
   const map = {};
   approved.forEach(function (s) {
     const acc = (s.accounts && s.accounts[0]) || null;
-    const key = acc ? acc.worker : 'other';
-    if (!map[key]) map[key] = { key: key, label: acc ? acc.label : 'Свой сборщик (сайты) / без аккаунта',
+    const key = s.platform === 'telegram' ? (s.account || 'parser') : 'other';
+    if (!map[key]) map[key] = { key: key, label: key === 'other' ? 'Свой сборщик (сайты)' : srcAccountLabel(key),
       alive: acc ? acc.alive : true, rows: [] };
     map[key].rows.push(s);
   });
@@ -277,6 +289,9 @@ function srcAddHtml() {
         '<div class="field"><label>Ссылка или username</label>' +
           '<input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala" autocomplete="off" autocapitalize="off">' +
           '<div class="field-hint" id="srcDupHint" hidden></div></div>' +
+        '<div class="field"><label>Какой номер парсит</label><div class="chip-group">' +
+          '<label class="chip"><input type="radio" name="srcNewAccount" value="parser" checked><span>' + escapeHtml(srcAccountLabel('parser')) + '</span></label>' +
+          '<label class="chip"><input type="radio" name="srcNewAccount" value="parser2"><span>' + escapeHtml(srcAccountLabel('parser2')) + '</span></label></div></div>' +
         '<div class="field"><label>Платформа</label><div class="chip-group">' +
           '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
           '<label class="chip"><input type="radio" name="srcNewPlatform" value="viber"><span>Viber</span></label></div></div>' +
@@ -363,34 +378,39 @@ function bindSources(tg) {
   const linkInput = document.getElementById('srcNewLink');
   if (linkInput) {
     const dupHint = document.getElementById('srcDupHint');
-    linkInput.addEventListener('input', function () {
+    const curAccount = function () { return document.querySelector('input[name="srcNewAccount"]:checked').value; };
+    const showDup = function () {
       const dup = findDuplicateSource(linkInput.value);
       if (dup) {
         dupHint.hidden = false;
-        dupHint.textContent = 'Уже есть в списке: ' + (dup.title || dup.link || ('@' + dup.username)) +
-          (dup.status === 'pending' ? ' (ждёт одобрения)' : '');
+        dupHint.textContent = dupWhere(dup, curAccount()) || ('Уже есть в списке: ' + (dup.title || dup.link || ('@' + dup.username)) +
+          (dup.status === 'pending' ? ' (ждёт одобрения)' : ''));
       } else {
         dupHint.hidden = true;
       }
-    });
+    };
+    linkInput.addEventListener('input', showDup);
+    document.querySelectorAll('input[name="srcNewAccount"]').forEach(function (i) { i.addEventListener('change', showDup); });
     document.getElementById('srcAddBtn').addEventListener('click', async function () {
       const btn = this;
       const link = linkInput.value.trim();
       const city = document.getElementById('srcNewCity').value.trim();
       const platform = document.querySelector('input[name="srcNewPlatform"]:checked').value;
       if (!link) { await alertAsync('Укажите ссылку'); return; }
-      if (findDuplicateSource(link)) {
+      const account = document.querySelector('input[name="srcNewAccount"]:checked').value;
+      const dupLocal = findDuplicateSource(link);
+      if (dupLocal) {
         haptic('warning');
-        await alertAsync('Такой источник уже есть в списке — не добавляю повторно.');
+        await alertAsync(dupWhere(dupLocal, account) || 'Такой источник уже есть в списке — не добавляю повторно.');
         return;
       }
       btn.disabled = true;
-      const res = await apiPost({ action: 'add_source', link: link, platform: platform, city: city });
+      const res = await apiPost({ action: 'add_source', link: link, platform: platform, city: city, account: account });
       btn.disabled = false;
       if (!res.ok) { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); return; }
       if (res.duplicate) {
         haptic('warning');
-        await alertAsync('Такой источник уже есть — не добавлено повторно.');
+        await alertAsync(dupWhere({ account: res.account }, account) || 'Такой источник уже есть — не добавлено повторно.');
         loadSources();
         return;
       }
