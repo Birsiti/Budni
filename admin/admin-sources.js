@@ -1,4 +1,4 @@
-// изменено 2026-10-07 14:45
+// изменено 2026-10-07 15:00
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -202,13 +202,13 @@ function srcStatsHtml(real) {
   real.forEach(function (s) { (s.accounts || []).forEach(function (a) { accs[a.worker] = a.alive; }); });
   const accKeys = Object.keys(accs);
   const accAlive = accKeys.filter(function (k) { return accs[k]; }).length;
-  function tile(val, label, cls) {
-    return '<div class="stile ' + (cls || '') + '"><b>' + val + '</b><span>' + label + '</span></div>';
+  function tile(val, label, cls, jump) {
+    return '<' + (jump ? 'button type="button" data-silent-jump' : 'div') + ' class="stile ' + (cls || '') + '"><b>' + val + '</b><span>' + label + '</span></' + (jump ? 'button' : 'div') + '>';
   }
   return '<div class="sstats">' +
     tile(real.length, 'каналов в парсинге') +
     tile('+' + today, 'объявлений сегодня', 'is-ok') +
-    tile(silent, 'молчат 2 дня', silent ? 'is-bad' : '') +
+    tile(silent, 'молчат 2 дня', silent ? 'is-bad' : '', silent > 0) +
     tile(accAlive + '/' + accKeys.length, 'номеров на связи', accKeys.length && accAlive < accKeys.length ? 'is-bad' : '') +
   '</div>';
 }
@@ -345,6 +345,22 @@ function bindSources(tg) {
     document.getElementById('srcList').innerHTML = srcListHtml(tg);
     el.querySelectorAll('.seg-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-filter') === SRC_UI.filter); });
   }
+
+  // плитка «молчат» → фильтр «Молчат», молчащие карточки раскрыты (там «Парсить с другого номера»), прокрутка к первой
+  const jump = el.querySelector('[data-silent-jump]');
+  if (jump) jump.addEventListener('click', function () {
+    SRC_UI.filter = 'silent'; SRC_UI.q = '';
+    document.getElementById('srcSearch').value = '';
+    haptic('light'); rerenderList();
+    const list = document.getElementById('srcList');
+    list.querySelectorAll('.srow').forEach(function (row) {
+      row.querySelector('.srow-more').hidden = false;
+      row.querySelector('.srow-main').setAttribute('aria-expanded', 'true');
+      row.classList.add('is-open');
+    });
+    const first = list.querySelector('.srow');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   document.getElementById('srcSearch').addEventListener('input', function () { SRC_UI.q = this.value; rerenderList(); });
   el.querySelectorAll('.seg-btn').forEach(function (b) {
