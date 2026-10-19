@@ -1,4 +1,4 @@
-// изменено 2026-10-07 15:00
+// изменено 2026-10-19 18:40
 // ============================================================
 // Будни_BY admin — страница «Источники» (admin-sources.html).
 // Сверху — сводка (каналов / сегодня / молчат / номера), «Публикуем: с какого номера и куда»,
@@ -92,16 +92,20 @@ function findDuplicateSource(link) {
 }
 
 // подпись аккаунта-парсера: номер из heartbeat (берём у любого источника этого аккаунта), иначе общее имя
+// 19.10 (Денис): номера называются по-своему — Лайф 1 (личный), ATV (беречь), Лайф 2 (новый, сюда переезжают Будни)
+const SRC_WORKERS = ['parser3', 'parser', 'parser2'];
+const SRC_NAMES = { parser: 'Лайф 1', parser2: 'ATV', parser3: 'Лайф 2' };
 function srcAccountLabel(worker) {
+  if (SRC_NAMES[worker]) return SRC_NAMES[worker];
   const hit = (STATE.sources || []).find(function (x) { return (x.accounts || []).some(function (a) { return a.worker === worker; }); });
   const acc = hit && hit.accounts.find(function (a) { return a.worker === worker; });
-  return acc ? acc.label : (worker === 'parser2' ? 'Второй номер' : 'Первый номер');
+  return acc ? acc.label : worker;
 }
 
 // ---------- данные для сводки и групп ----------
 function srcGroups(approved) {
   // группа = аккаунт, который парсит канал; нет аккаунта (сайты, пока нет heartbeat) — «other»
-  const order = ['parser', 'parser2'];
+  const order = SRC_WORKERS;
   const map = {};
   approved.forEach(function (s) {
     const acc = (s.accounts && s.accounts[0]) || null;
@@ -143,12 +147,13 @@ function srcRowHtml(s) {
   const open = s.link && /^https?:/i.test(s.link)
     ? '<a class="btn-soft" href="' + escapeHtml(s.link) + '" target="_blank" rel="noopener">Открыть канал</a>' : '';
   const cur = s.account || 'parser';
-  const other = cur === 'parser2' ? 'parser' : 'parser2';
   const blocked = (s.blocked_accounts || []).map(function (w) { return srcAccountLabel(w); });
   const blockedHtml = blocked.length
     ? '<div class="srow-blocked">🚫 Заблокирован на этом канале: ' + escapeHtml(blocked.join(', ')) + '</div>' : '';
   const moveBtn = s.platform === 'telegram'
-    ? '<button class="btn-soft" type="button" data-src-move="' + escapeHtml(s.id) + '">Парсить с другого номера</button>' : '';
+    ? '<div class="chip-group">' + SRC_WORKERS.filter(function (w) { return w !== cur; }).map(function (w) {
+        return '<button class="btn-soft" type="button" data-src-move="' + escapeHtml(s.id) + '" data-src-to="' + w + '">Парсить с ' + escapeHtml(srcAccountLabel(w)) + '</button>';
+      }).join('') + '</div>' : '';
   return '<div class="srow ' + tone + '" data-src="' + escapeHtml(s.id) + '">' +
     '<button class="srow-main" type="button" aria-expanded="false">' +
       '<span class="sdot" aria-hidden="true"></span>' +
@@ -297,8 +302,9 @@ function srcAddHtml() {
           '<input type="text" id="srcNewLink" placeholder="t.me/nazvanie_kanala или nazvanie_kanala" autocomplete="off" autocapitalize="off">' +
           '<div class="field-hint" id="srcDupHint" hidden></div></div>' +
         '<div class="field"><label>Какой номер парсит</label><div class="chip-group">' +
-          '<label class="chip"><input type="radio" name="srcNewAccount" value="parser" checked><span>' + escapeHtml(srcAccountLabel('parser')) + '</span></label>' +
-          '<label class="chip"><input type="radio" name="srcNewAccount" value="parser2"><span>' + escapeHtml(srcAccountLabel('parser2')) + '</span></label></div></div>' +
+          SRC_WORKERS.map(function (w, i) {
+            return '<label class="chip"><input type="radio" name="srcNewAccount" value="' + w + '"' + (i === 0 ? ' checked' : '') + '><span>' + escapeHtml(srcAccountLabel(w)) + '</span></label>';
+          }).join('') + '</div></div>' +
         '<div class="field"><label>Платформа</label><div class="chip-group">' +
           '<label class="chip"><input type="radio" name="srcNewPlatform" value="telegram" checked><span>Telegram</span></label>' +
           '<label class="chip"><input type="radio" name="srcNewPlatform" value="viber"><span>Viber</span></label></div></div>' +
@@ -462,14 +468,15 @@ async function moveSource(btn) {
   const s = (STATE.sources || []).find(function (x) { return String(x.id) === String(id); });
   if (!s) return;
   const cur = s.account || 'parser';
-  const target = cur === 'parser2' ? 'parser' : 'parser2';
+  const target = btn.getAttribute('data-src-to') || (cur === 'parser2' ? 'parser' : 'parser2');
+  const blocked = !!s.silent;   // молчит — скорее всего номер выкинули; иначе перенос ради нагрузки
   const warnBlocked = (s.blocked_accounts || []).indexOf(target) >= 0
     ? '\n\n⚠ ' + srcAccountLabel(target) + ' раньше уже был заблокирован на этом канале.' : '';
-  const ok = await confirmAsync('Перенести «' + srcName(s) + '» с номера ' + srcAccountLabel(cur) + ' на ' + srcAccountLabel(target) +
-    '? ' + srcAccountLabel(cur) + ' запомнится как заблокированный на этом канале.' + warnBlocked);
+  const ok = await confirmAsync('Перенести «' + srcName(s) + '» с ' + srcAccountLabel(cur) + ' на ' + srcAccountLabel(target) + '?' +
+    (blocked ? ' Канал молчит — ' + srcAccountLabel(cur) + ' запомнится как заблокированный на нём.' : '') + warnBlocked);
   if (!ok) return;
   btn.disabled = true;
-  const res = await apiPost({ action: 'move_source', id: id, account: target });
+  const res = await apiPost({ action: 'move_source', id: id, account: target, blocked: blocked });
   if (!res.ok) { haptic('error'); await alertAsync('Не получилось: ' + (res.error || '')); btn.disabled = false; return; }
   haptic('success');
   loadSources();
